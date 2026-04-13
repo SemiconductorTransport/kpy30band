@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kpy30band"
+dynamic = ["version"]
+dependencies = [
+    'numpy', 
+    'scipy', 
+    'matplotlib'
+]
+requires-python = ">=3.14"
+authors = [
+    { name = "Badal Mondal", email = "badalmondal.chembgc@gmail.com" },
+]
+maintainers = [
+  {name = "Badal Mondal", email = "badalmondal.chembgc@gmail.com" },
+]
+description = "kpy30band: Python package for 30-band k.p calculations in bulk zinc blende structures"
+readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICEN[CS]E*"]
+keywords = ["30-band k.p"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/SemiconductorTransport/kpy30band/wiki"
+Documentation = "https://github.com/SemiconductorTransport/kpy30band/wiki/01.-Package-documentation"
+Repository = "https://github.com/SemiconductorTransport/kpy30band.git"
+Issues = "https://github.com/SemiconductorTransport/kpy30band/issues"
+Changelog = "https://github.com/SemiconductorTransport/kpy30band/wiki/04.-Release-history"
+Releasenotes = "https://github.com/SemiconductorTransport/kpy30band/releases"
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["kpy30band*", "kpy30band.*"]
+exclude = ["tests", "imgs", "docs", "tutorials"] #"kpy30band.imgs", "kpy30band.imgs.*",
+namespaces = false
+
+#[tool.setuptools]
+#include-package-data = false
+
+#[tool.setuptools.package-data]
+#kpy30band = ["imgs/*.png"]
+
+[tool.setuptools_scm]
+version_file = "kpy30band/_version.py"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q"
+testpaths = ["tests"]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0", "pytest-cov>=4.1"]
