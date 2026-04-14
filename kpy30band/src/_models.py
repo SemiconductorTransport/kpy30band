@@ -15,7 +15,8 @@ class _kpoints_from_path:
         pass
     @classmethod
     def _generate_k_points_from_path(cls, kpath='L-G', nkpts=41):
-        kpath = list(kpath) if np.isinstance(kpath, str) else kpath
+        # In reciprocal space
+        kpath = [kpath] if isinstance(kpath, str) else kpath
         k_points_dict = {}
         for kpath_frac in kpath:
             k_point_name = kpath_frac.split('-')
@@ -28,20 +29,26 @@ class _kpoints_from_path:
 #%% ===========================================================================    
 class _kp_H_30x30(_kpoints_from_path):
     # a0 in Angstrom
-    # E_Gamma keys = (EG_2u, EG_25u, EG_12, EG_1u, EG_1l, EG_15, EG_2l, EG_25l)
-    # E_Delta keys = (ED_25u, ED_15, ED_25l, ED_ul25)
-    # Off_diag keys = (P2, P3, P4, Q1, Q2, R1, R2, T1, T2)
+    # E_Gamma keys = (EG_2u, EG_25u, EG_12, EG_1u, EG_1l, EG_15, EG_2l, EG_25l) # eV
+    # E_Delta keys = (ED_25u, ED_15, ED_25l, ED_25ul) # eV
+    # Off_diag keys = (P1, P2, P3, P4, Q1, Q2, R1, R2, T1, T2) # eV.nm
     # Default is return_eigen_val_vec_both=False => calculate only eigenvalues. 
     def __init__(self, a0:float, E_Gamma:dict, E_Delta:dict, Off_diag:dict, 
                  kpath_list:str|list='L-G', nkpoints:int=41, 
                  return_eigen_val_vec_both:bool=False):
         #======================================================================
-        k_sqr_const = 150.41206484194905/(a0*a0)
-        self.k_points = self._generate_k_points_from_path(kpath=kpath_list, nkpts=nkpoints)
-        self.k_squared = {}
-        for k_p_sec, kpts_arr in self.k_points.items():
-            # h_bar*h_bar*2*pi_*pi_/e_charge/e_mass*1e20 = 150.41206484194905
-            self.k_squared[k_p_sec] = k_sqr_const*np.sum(kpts_arr*kpts_arr, axis=1)
+        # h_bar*h_bar*2*pi_*pi_/e_charge/e_mass*1e20 = 150.41206484194905
+        # h^2.(2pi*k/(a*1e-10))^2/(2*m0) 
+        k_sqr_const = 150.41206484194905/(a0*a0) 
+        # 2*pi_/0.1 = 62.83185307179586
+        # 2*pi/a*k_points [1/nm]
+        k_const = 62.83185307179586/a0
+        
+        k_points = self._generate_k_points_from_path(kpath=kpath_list, nkpts=nkpoints) 
+        self.k_squared, self.k_points = {}, {}
+        for k_p_sec, kpts_arr in k_points.items():
+            self.k_squared[k_p_sec] = k_sqr_const*np.sum(kpts_arr*kpts_arr, axis=1) # h^2.k^2/(2*m0) eV
+            self.k_points[k_p_sec] =  k_const*kpts_arr
         #======================================================================
         self.E_Gamma = E_Gamma
         self.E_Delta = E_Delta
@@ -57,7 +64,8 @@ class _kp_H_30x30(_kpoints_from_path):
                  self.k = k_p_sec[ii]
                  self.k_sqr = _k_squared[ii]
                  eigenvalvecs.append(self._diagon_H_30x30())
-            eigenvalvecs_k_path[k_p_sec_name] = eigenvalvecs
+            # kx, ky, kz, e1, e2, e3, ...
+            eigenvalvecs_k_path[k_p_sec_name] = np.concatenate((k_p_sec,eigenvalvecs), axis=1)
         return eigenvalvecs_k_path
     
     def _diagon_H_30x30(self):
@@ -81,10 +89,10 @@ class _kp_H_30x30(_kpoints_from_path):
         # Off-diagonal blocks
         H_off_diag[0:2, 2:8] = self._Hk_2x6(mul_fact=self.Off_diag['P4']) # H_2x6_p4
         H_off_diag[0:2, 24:30] = self._Hk_2x6(mul_fact=self.Off_diag['P3']) # H_2x6_p3
-        H_off_diag[2:8, 8:12] = self._Hk_4x6(mul_fact=self.Off_diag['R2']) # H_6x4_r2
+        H_off_diag[2:8, 8:12] = self._Hk_4x6(mul_fact=self.Off_diag['R2']).T # H_6x4_r2
         H_off_diag[2:8, 16:22] = self._Hk_6x6(mul_fact=self.Off_diag['Q2']) # H_6x6_q2
-        H_off_diag[2:8, 22:24] = self._Hk_2x6(mul_fact=self.Off_diag['P2']) # H_6x2_p2
-        H_off_diag[2:8, 24:30] = self._H_G_SO(self.E_Delta['ED_ul25']) # H_6x6_SO_25ul
+        H_off_diag[2:8, 22:24] = self._Hk_2x6(mul_fact=self.Off_diag['P2']).T # H_6x2_p2
+        H_off_diag[2:8, 24:30] = self._H_G_SO(self.E_Delta['ED_25ul']) # H_6x6_SO_25ul
         H_off_diag[8:12, 24:30] = self._Hk_4x6(mul_fact=self.Off_diag['R1']) # H_4x6_r1
         H_off_diag[12:14, 16:22] = self._Hk_2x6(mul_fact=self.Off_diag['T1']) # H_2x6_t1
         H_off_diag[14:16, 16:22] = self._Hk_2x6(mul_fact=self.Off_diag['T2']) # H_2x6_t2
@@ -136,79 +144,3 @@ class _kp_H_30x30(_kpoints_from_path):
                                        [ 0,  0, -1,  -1,  1j,  0 ],
                                        [ 0,  0, -1j, -1j, -1,  0 ],
                                        [ 1,  1j, 0,   0,   0, -1]])
-    
-   
-
-
-
-H_G_SO_25u = 0.046/3.0*H_G_SO
-H_G_SO_25l = 0.652/3.0*H_G_SO
-H_G_SO_25ul = 0.556/3.0*H_G_SO 
-
-H_G_25u_6x6 = np.diag([8.546]*6)+ H_G_SO_25u
-H_G_25l_6x6 = np.diag([0.000]*6)+ H_G_SO_25l
-
-H = np.zeros((12,12), dtype=np.complex64)
-H[0:6, 0:6] = H_G_25u_6x6
-H[0:6, 6:12] = H_G_SO_25ul
-H[6:12, 6:12] = H_G_25l_6x6
-H[6:12, 0:6] = H_G_SO_25ul
-
-#%%
-eigenvalus, eigenvects = LA.eigh(H, UPLO='L')
-# for ii in range(len(eigenvalus)):
-#     print(f'{eigenvalus[ii]:0.3f}: {list(eigenvects[ii])}')
-print(eigenvalus) #, eigenvects)
-
-#%%
-H_G_SO = np.diag([-1.0+0.0j]*3)
-H_G_SO[0,1], H_G_SO[1,0] = -1.0, -1.0
-H_G_SO[0,2], H_G_SO[2,0] = 1j, -1j
-H_G_SO[1,2], H_G_SO[2,1] = 1j, -1j
-
-H_G_SO_25u = 0.046/3.0*H_G_SO
-H_G_SO_25l = 0.652/3.0*H_G_SO
-H_G_SO_25ul = 0.556/3.0*H_G_SO 
-
-H_G_25u_6x6 = np.diag([8.546]*3)+ H_G_SO_25u
-H_G_25l_6x6 = np.diag([0.000]*3)+ H_G_SO_25l
-
-H = np.zeros((6,6), dtype=np.complex64)
-H[0:3, 0:3] = H_G_25u_6x6
-H[0:3, 3:6] = H_G_SO_25ul
-H[3:6, 3:6] = H_G_25l_6x6
-H[3:6, 0:3] = H_G_SO_25ul
-
-#%%
-for ll in H:
-    for kk in ll:
-        print(f'{kk:.3f}  ', end='')
-    print('')
-#%%
-eigenvalus, eigenvects = LA.eigh(H, UPLO='L')
-# for ii in range(len(eigenvalus)):
-#     print(f'{eigenvalus[ii]:0.3f}: {list(eigenvects[ii])}')
-print(*eigenvalus, end=' ') #, eigenvects)
-
-#%% Ge
-#%%
-H_G_SO = np.diag([-1.0+0.0j]*3)
-H_G_SO[0,1], H_G_SO[1,0] = -1.0, -1.0
-H_G_SO[0,2], H_G_SO[2,0] = 1j, -1j
-H_G_SO[1,2], H_G_SO[2,1] = 1j, -1j
-
-H_G_SO_25u = 0.0793/3.0*H_G_SO
-H_G_SO_25l = 0.2247/3.0*H_G_SO
-H_G_SO_25ul = 0.22/3.0*H_G_SO 
-
-H_G_25u_6x6 = np.diag([13.4041]*3)+ H_G_SO_25u
-H_G_25l_6x6 = np.diag([0.000]*3)+ H_G_SO_25l
-
-H = np.zeros((6,6), dtype=np.complex64)
-H[0:3, 0:3] = H_G_25u_6x6
-H[0:3, 3:6] = H_G_SO_25ul
-H[3:6, 3:6] = H_G_25l_6x6
-H[3:6, 0:3] = H_G_SO_25ul
-
-eigenvalus, eigenvects = LA.eigh(H, UPLO='L')
-print(*eigenvalus, end=' ')

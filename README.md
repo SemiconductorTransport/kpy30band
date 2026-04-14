@@ -1,8 +1,11 @@
-# `kpy30band`: Python package for 30-band k.p calculations in bulk zinc blende structures
+# `kpy30band`: Python package for 30-band $k\cdot p$ calculations
 
 <!-- =========================================================== -->
 
 <!-- =========================================================== -->
+![](./imgs/Ge0.80Sn0.20_LGX.png) | ![](./imgs/Ge0.80Sn0.20_LGX.png) | ![](./imgs/Ge0.80Sn0.20_LGX.png)
+:------------------------------:| :------------------------------:| :------------------------------:
+Ge k.p bandstructure | GeSn k.p bandstructure | Si k.p bandstructure
 <!-- Here absolute path is added since pypi documentation could not access package relative path
 ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/mobilities_300K.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/LFOM_norm_300K.png)
 :------------------------------:| :------------------------------:| :------------------------------:
@@ -44,6 +47,7 @@ __Contact us:__ [Email developer/maintainer team](mailto:badalmondal.chembgc@gma
     2. numpy
     3. scipy
     4. matplotlib
+    5. h5py
 ```
 
 ### 2. Installation using `pip` [*recommended]
@@ -127,6 +131,8 @@ Chekout out [version release history here](https://github.com/SemiconductorTrans
 
 <!-- =========================================================== -->
 ## Upcoming (TBD)
-1. TBA
+1. Create database of parameters
+2. Add documentation
+3. Implement strained kp hamiltonian
 <!-- =========================================================== -->
 

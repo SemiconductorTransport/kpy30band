@@ -8,7 +8,8 @@ dynamic = ["version"]
 dependencies = [
     'numpy', 
     'scipy', 
-    'matplotlib'
+    'matplotlib',
+    'h5py'
 ]
 requires-python = ">=3.14"
 authors = [
