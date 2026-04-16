@@ -7,31 +7,53 @@ Created on Mon Apr 13 18:04:04 2026
 """
 
 #==============================================================================
-from .src import _kp_H_30x30
+from .src import _initiallize_kp_params, _kp_H_30x30_ZB, _AlloyParams
 from .basicfns import _SaveData2File
 from .utilities import _plot_bandstr
+import numpy as np
 
 #==============================================================================
-class k_dot_p(_kp_H_30x30):
-    def __init__(self, save_file_dir='.', log_info:str='1'):
+class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
+    def __init__(self, binaries=['Si', 'Ge'], pseudomorphic_strain:bool=False, 
+                 substrate:str|float=None, alloy_crystal_structure:str='zb', 
+                 use_this_params:dict=None, alloy_type:str=None, 
+                 save_file_dir='.', log_info:str='1'):
         self.save_dir_ = save_file_dir
         self.log_output = str(log_info)
+        
+        _initiallize_kp_params.__init__(self)
+        self._initalize_mater_parameters(binaries=binaries,
+                pseudomorphic_strain=pseudomorphic_strain, 
+                substrate=substrate, alloy_crystal_structure=alloy_crystal_structure, 
+                use_this_params=use_this_params, alloy_type=alloy_type)
     
-    def kp_30x30(self, a0:float, E_Gamma:dict, E_Delta:dict, Off_diag:dict, 
-                 kpath_list:str|list='L-G', nkpoints:int=41, 
-                 return_eigen_val_vec_both:bool=False,
+    def kp_30x30(self, compositions:float|np.ndarray|list=None, kpath_list:str|list='L-G', 
+                 nkpoints:int=41, return_eigen_val_vec_both:bool=False,
                  save_data:bool=False, save_file:str='eigenval.h5'):
-        _kp_H_30x30.__init__(self, a0, E_Gamma, E_Delta, Off_diag, 
-                             kpath_list=kpath_list, nkpoints=nkpoints, 
-                             return_eigen_val_vec_both=return_eigen_val_vec_both)
-        eigenvalvecs_k_path = self._diagonalize_H_30x30()
+        
+        if isinstance(compositions, (int, float)):
+            compositions = np.array([compositions], dtype=float)
+        else:
+            compositions = np.array(compositions, dtype=float)
+            
+        self._get_alloy_params(compositions)
+        
+        if self.alloy_crys_type_ == 'zb':
+            kpH = _kp_H_30x30_ZB(kpath_list=kpath_list, nkpoints=nkpoints, 
+                                 return_eigen_val_vec_both=return_eigen_val_vec_both)
+            eigenvalvecs_k_path = {}
+            for ii in range(len(compositions)):
+                alloy_params_comp = {key: val[ii] for key, val in self.alloy_params_.items()}
+                eigenvalvecs_k_path[f'{compositions[ii]:0.5f}'] = kpH._diagonalize_H_30x30(alloy_params_comp)
+        else:
+            raise ValueError('Hamiltonian for only ZB structures is implemented so far. Contact developer.')
         
         if save_data:
             _SaveData2File._save_data_2_file(data=eigenvalvecs_k_path, save_dir=self.save_dir_, 
                                              file_name=save_file, print_log=self.log_output)
         return eigenvalvecs_k_path
             
-class read_write_data(_SaveData2File):
+class process_data(_SaveData2File):
     def __init__(self, save_file_dir='.', log_info:str=None):
         self.save_dir_ = save_file_dir
         self.log_output = str(log_info)
@@ -41,9 +63,18 @@ class read_write_data(_SaveData2File):
         self._save_data_2_file(data=eigenvalvecs_k_path, save_dir=self.save_dir_, 
                                file_name=save_file, print_log=self.log_output)
         
-    def read_data_from_file(self, data_file_name, read_this_k_paths:list|str=None):
+    def read_data_from_file(self, data_file_name, read_this_compos:list|str=None,
+                            read_this_k_paths:list|str=None):
+        # Default: read all bands
         return self._read_data_file(f'{self.save_dir_}/{data_file_name}', 
+                                    read_this_compos=read_this_compos,
                                     read_this_k_paths=read_this_k_paths)
+    
+    def process_ek_data(self, data_file_name, read_this_compos:list|str=None,
+                        read_this_k_paths:list|str=None):
+        return self._process_ek_data(f'{self.save_dir_}/{data_file_name}', 
+                                     read_this_compos=read_this_compos,
+                                     read_this_k_paths=read_this_k_paths)
     
 class plottings(_plot_bandstr):
     """

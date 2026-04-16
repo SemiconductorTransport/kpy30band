@@ -17,7 +17,6 @@ class _plot_bandstr(_GeneratePlots):
     The functions in this class plots the different mobility figures.
 
     """
-    _special_kp_map = {'G':r'$\Gamma$', 'L':'L', 'X':'X', 'G':r'$\Gamma$'}
     def __init__(self, save_figure_dir='.', log_info=None):
         """
         Initialize the plotting class.
@@ -67,9 +66,9 @@ class _plot_bandstr(_GeneratePlots):
                 
         self.ax.axhline(y=0, color=lc_spkpt, ls=ls_spkpt)
         if special_kpts is not None:
-            xticks_pos = special_kpts.values()
-            xticks_label = [self._special_kp_map[kk] for kk in special_kpts.keys()]  
-            self.ax.set_xticks(list(xticks_pos), labels=list(xticks_label))
+            xticks_ = _plot_bandstr._map_special_kpoints_labels(special_kpts[0], special_kpts[1])
+            xticks_pos = np.array(list(xticks_.keys()), dtype='float')
+            self.ax.set_xticks(xticks_pos, labels=list(xticks_.values()))
             for xx in xticks_pos:
                 self.ax.axvline(x=xx, color=lc_spkpt, ls=ls_spkpt)
 
@@ -81,6 +80,28 @@ class _plot_bandstr(_GeneratePlots):
             
         return self.fig, self.ax
     
+    @classmethod
+    def _map_special_kpoints_labels(cls, special_kpts_pos, special_kpts_label):
+        xticks_ = {}
+        for ii, pos_ in enumerate(special_kpts_pos):
+            key = f'{pos_:0.3f}'
+            ll = cls._rename_xticks(special_kpts_label[ii] )
+            if key in xticks_:
+                if xticks_[key] == ll: continue
+                xticks_[key] += f',{ll}'
+            else:
+                xticks_[key] = ll
+        return xticks_
+    
+    @classmethod
+    def _rename_xticks(cls, xticks_label):
+        if xticks_label.startswith('G'):
+            return r'$\Gamma$'
+        elif xticks_label.startswith('D'):
+            return r'$\Delta$'
+        else:
+             return xticks_label
+        
     def _plot_bandstructure(self, kpts, bands_e, special_xticks=None, color=None, ls='-',
                             ls_spkpt='--', lc_spkpt='gray'):
         for be in bands_e:

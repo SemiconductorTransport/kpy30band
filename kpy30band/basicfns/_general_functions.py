@@ -28,9 +28,12 @@ class _SaveData2File:
                 np.savetxt(f, data, header=header_txt, footer=footer_txt, 
                            fmt=np_data_fmt, comments=comments_symbol)
         else:
+            # Data structure: composition group => k-path sheets
             with h5py.File(fname_save_file, 'w') as f:
-                for k_path, vals in data.items():
-                    f.create_dataset(k_path, data=vals, dtype='d')
+                for compos, k_path_vals in data.items():
+                    data_group = f.create_group(compos)
+                    for k_path, vals in k_path_vals.items():
+                        data_group.create_dataset(k_path, data=vals, dtype='d')
         return fname_save_file
     
     @classmethod
@@ -50,10 +53,45 @@ class _SaveData2File:
     
         
     @staticmethod
-    def _read_data_file(full_file_path_name:str='', read_this_k_paths:list|str=None):
+    def _read_data_file(full_file_path_name:str='', read_this_compos:list|str=None,
+                        read_this_k_paths:list|str=None):
         plot_data = {}
         with h5py.File(full_file_path_name, 'r') as f:
-            read_f = f.keys() if read_this_k_paths is None else read_this_k_paths
-            for k_paths in read_f:
-                plot_data[k_paths] = f[k_paths][:]
+            # Data structure: composition group => k-path sheets
+            read_compos = list(f.keys()) if read_this_compos is None else read_this_compos
+            read_f = f[read_compos[0]].keys() if read_this_k_paths is None else read_this_k_paths
+            for compos in read_compos: # composition loop
+                plot_data[compos] = {}
+                for k_paths in read_f: # k-path loop
+                    plot_data[compos][k_paths] = f[compos][k_paths][:]
         return plot_data
+    
+    @classmethod
+    def _process_ek_data(cls, data_file_name, read_this_compos:list|str=None,
+                         read_this_k_paths:list|str=None):
+        # Default: read all bands
+        read_data = cls._read_data_file(data_file_name,
+                                        read_this_compos=read_this_compos,
+                                        read_this_k_paths=read_this_k_paths) 
+        for_compos = {}
+        for compos in read_data.keys(): # loop over compositions
+            shift = 0
+            special_kpts_pos, special_kpts_label, kpts, bands_e = [], [], [], []
+            for k_paths, r_data in read_data[compos].items(): # loop over k-path
+                k_ps = r_data[:, 0:3] # First 3 numbers are k-points
+                XX = np.sqrt(np.sum(k_ps*k_ps, axis=1))
+                #-----------------------------------------------------
+                # This is to move x-axis coordinates to make the plot 
+                XX_fi = XX[-1] - XX[0]
+                XX = XX + shift if XX_fi > 0 else XX[0]-XX+shift
+                shift = XX[-1]
+                #-----------------------------------------------------
+                kpts.append(XX)
+                bands_e.append(r_data[:, 3:].T) # 3 is for kx, ky, kz in the begining
+                special_kpts_pos += [XX[0], XX[-1]]
+                special_kpts_label += k_paths.split('-')   
+            kpts = np.concatenate(kpts, axis=0)
+            bands_e = np.concatenate(bands_e, axis=1)
+            for_compos[compos] = (kpts, bands_e, (special_kpts_pos, special_kpts_label))
+        return for_compos
+    
