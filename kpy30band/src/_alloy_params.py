@@ -56,6 +56,8 @@ class _AlloyParams:
         self.alloy_crys_type_ = alloy_crystal_structure.lower()
         # Get parameters from database and update it if use_mat_params is not none.
         self.bin_params_dbs = self._get_params_from_database(use_this_params)
+        # Initializing the apply strain keyword
+        self.apply_strain_ = False
     
     @staticmethod
     def _update_material_params_locally(use_mat_params, params_db):
@@ -133,50 +135,109 @@ class _AlloyParams:
                 use_mat_params[self.alloy_name] = use_mat_params.pop(alloy_name)
             return self._update_material_params_locally(use_mat_params, params_db)
         
-        #--------------------------------------------------------------------------
-        @staticmethod        
-        def _get_substrate_properties(substrate_name):
-            """
-            Generate the substrate properties for phsedomorphic strain.
+    #--------------------------------------------------------------------------
+    @staticmethod        
+    def _get_substrate_properties(substrate_name):
+        """
+        Generate the substrate properties for phsedomorphic strain.
 
-            Parameters
-            ----------
-            substrate_name : str
-                The name of the substrate. The name should be in the database. If 
-                the name does not exists in the database return None.
+        Parameters
+        ----------
+        substrate_name : str
+            The name of the substrate. The name should be in the database. If 
+            the name does not exists in the database return None.
 
-            Returns
-            -------
-            Dictionary
-                The parameters of the substrate. Get from database. If substrate
-                name does not exists in the database return None.
+        Returns
+        -------
+        Dictionary
+            The parameters of the substrate. Get from database. If substrate
+            name does not exists in the database return None.
 
-            """
-            return material_database.get(substrate_name).copy()
-                
-        def _cal_pseudomorphic_strain(self, substrate:str|float, growth_direction:str='001'):
-            if isinstance(substrate, str):
-                substrate_params_dic = self._get_substrate_properties(substrate)
+        """
+        return material_database.get(substrate_name).copy()
+            
+    def _cal_pseudomorphic_strain(self, overwrite_epsilon_in_plane_DCS:float|list|np.ndarray=None):
+        a_xs = self.alloy_params_.get('lattice_a0')
+        len_axs = len(a_xs)
+        
+        if overwrite_epsilon_in_plane_DCS is not None:
+            if isinstance(overwrite_epsilon_in_plane_DCS, (float, int)):
+                epsilon_in_plane_DCS = np.array([overwrite_epsilon_in_plane_DCS]*len_axs)
+            else:
+                tmp = np.array(overwrite_epsilon_in_plane_DCS)
+                if len(tmp) < len_axs:
+                    raise ValueError('Overwrite_strain array length should be >= compositions array. Alternatively pass a single float.')
+                epsilon_in_plane_DCS = tmp[:len_axs]                
+        else:
+            if isinstance(self.biaxial_substrate, str):
+                substrate_params_dic = self._get_substrate_properties(self.biaxial_substrate)
                 substrate_lp = substrate_params_dic.get('lattice_a0') # substrate in-plane lattice parameter
             else:    
-                substrate_lp = float(substrate)
-                
-            lattice_a = self.alloy_params_.get('lattice_a0') 
-            lattice_c = self.alloy_params_.get('lattice_c0') 
-            epsilon_in_plane_DCS = substrate_lp/lattice_a - 1.0 # Device coordinate system
-            if self.alloy_crys_type_ == 'wz':
-                biaxial_dist_coeff = -2*(self.alloy_params_.get('C_13')/self.alloy_params_.get('C_33'))
-            elif self.alloy_crys_type_ == 'zb':
-                biaxial_dist_coeff = -2*(self.alloy_params_.get('C_12')/self.alloy_params_.get('C_11'))
-            else:
-                raise ValueError('Requested alloy crystal structure is not supported yet. Contact developer.')
-            epsilon_outof_plane_DCS = biaxial_dist_coeff*epsilon_in_plane_DCS
-            if growth_direction == '001':
-                return np.diag([epsilon_in_plane_DCS, epsilon_in_plane_DCS, epsilon_outof_plane_DCS])
-            elif growth_direction == '100':
-                return np.diag([epsilon_outof_plane_DCS, epsilon_in_plane_DCS, epsilon_in_plane_DCS ])
-            return
+                substrate_lp = float(self.biaxial_substrate)
+            # Device coordinate system  
+            epsilon_in_plane_DCS = substrate_lp/a_xs - 1.0 
         
+        if self.alloy_crys_type_ == 'wz':
+            #lattice_c = self.alloy_params_.get('lattice_c0') 
+            biaxial_dist_coeff = -2*(self.alloy_params_.get('C_13')/self.alloy_params_.get('C_33'))
+        elif self.alloy_crys_type_ == 'zb':
+            # Crystal coordinate system
+            # strain_tensor = [e_xx, e_yy, e_zz, e_yz, e_xz, e_xy]
+            # TODO: generalize it using matrix multiplication
+            hkl = f'{self.growth_hkl[0]}{self.growth_hkl[1]}{self.growth_hkl[2]}'
+            if hkl == '001': # DCS = CCS
+                print(f'In-plane strain = {", ".join([f"{x*100:0.2f}%" for x in epsilon_in_plane_DCS])}')
+                epsilon_outof_plane_DCS = self._biaxial_Poisson_ratio_zb(hkl)*epsilon_in_plane_DCS
+                zeros = np.zeros(np.shape(epsilon_outof_plane_DCS))
+                return np.array([epsilon_in_plane_DCS, epsilon_in_plane_DCS, 
+                                 epsilon_outof_plane_DCS,zeros,zeros,zeros])
+            elif hkl == '100': # DCS = CCS
+                epsilon_outof_plane_DCS = self._biaxial_Poisson_ratio_zb(hkl)*epsilon_in_plane_DCS
+                zeros = np.zeros(np.shape(epsilon_outof_plane_DCS))
+                return np.array([epsilon_outof_plane_DCS, epsilon_in_plane_DCS, 
+                                 epsilon_in_plane_DCS,zeros,zeros,zeros])
+            elif hkl == '111': # DCS /= CCS
+                epsilon_outof_plane_DCS = self._biaxial_Poisson_ratio_zb(hkl)*epsilon_in_plane_DCS
+                e_ii = (epsilon_outof_plane_DCS + 2.0*epsilon_in_plane_DCS) / 3.0
+                e_ij = (epsilon_outof_plane_DCS - epsilon_in_plane_DCS) / 3.0
+                return np.array([e_ii, e_ii, e_ii, e_ij, e_ij, e_ij])
+            elif hkl == '110': # DCS /= CCS
+                epsilon_outof_plane_DCS = self._biaxial_Poisson_ratio_zb(hkl)*epsilon_in_plane_DCS
+                zeros = np.zeros(np.shape(epsilon_outof_plane_DCS))
+                e_xxyy = (epsilon_outof_plane_DCS + epsilon_in_plane_DCS) / 2.0
+                e_xy = (epsilon_outof_plane_DCS - epsilon_in_plane_DCS) / 2.0
+                return np.array([e_xxyy, e_xxyy, epsilon_in_plane_DCS, zeros, zeros, e_xy])
+            else:
+                raise ValueError('Requested growth direction is not implemented yet. Contact developer.')
+        else:
+            raise ValueError('Requested alloy crystal structure is not supported yet. Contact developer.')
+        return
+    
+    def _biaxial_Poisson_ratio_zb(self, hkl):
+        if hkl in ['001','100','010']:
+            # biaxial Poisson ratio = -2(C_12/C_11)
+            return -2.0*(self.alloy_params_.get('C_12')/self.alloy_params_.get('C_11'))
+        elif hkl == '111': # DCS /= CCS
+            # biaxial Poisson ratio = -2[(C_11+2C_12-2C_44)/(C_11+2C_12+4C_44)]
+            return -2.0*((self.alloy_params_.get('C_11')+
+                          2.0*self.alloy_params_.get('C_12')-
+                          2.0*self.alloy_params_.get('C_44'))/
+                         (self.alloy_params_.get('C_11')+
+                          2.0*self.alloy_params_.get('C_12')+
+                          4.0*self.alloy_params_.get('C_44')))
+        elif hkl == '110': # DCS /= CCS
+            # biaxial Poisson ratio = -[(C_11+3C_12-2C_44)/(C_11+C_12+2C_44)]
+            return -1.0*((self.alloy_params_.get('C_11')+
+                          3.0*self.alloy_params_.get('C_12')-
+                          2.0*self.alloy_params_.get('C_44'))/
+                         (self.alloy_params_.get('C_11')+
+                          self.alloy_params_.get('C_12')+
+                          2.0*self.alloy_params_.get('C_44')))
+        
+    def _rotation_matrix_from_hkl(hkl:np.ndarray):
+        # z-axis surface normal
+        z = hkl / np.linalg.norm(hkl)
+        return
     #--------------------------------------------------------------------------
     def _get_two_comp_component_alloy_params(self):
         """

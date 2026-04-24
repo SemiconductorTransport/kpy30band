@@ -7,15 +7,55 @@ Created on Mon Apr 13 18:04:04 2026
 """
 
 #==============================================================================
-from .src import _initiallize_kp_params, _kp_H_30x30_ZB, _AlloyParams
+from .src import _DataBase, _initiallize_kp_params, _kp_H_30x30_ZB, _AlloyParams
 from .basicfns import _SaveData2File
 from .utilities import _plot_bandstr
 import numpy as np
 
+## ==============================================================================
+class DataBase(_DataBase):
+    """
+    The functions in this class use to print/manipulate the material parameters
+    in the database.
+    """
+    def __init__(self):
+        self.dtbase = _DataBase()
+        
+    def print_database(self, for_material:str=None):
+        """
+        This function prints the information of material parameters from the database.
+
+        Parameters
+        ----------
+        for_material : string (case sensitive), optional
+            The material name for which the parameters will be printed. 
+            The name should match the name in database. If None, prints general
+            information about the database.
+            The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.dtbase._print_database(for_material=for_material)
+    
+    def print_materials_available_in_database(self):
+        """
+        Print the materials available so far in the database.
+
+        Returns
+        -------
+        None.
+
+        """
+        self.dtbase._print_materials_available_in_database()
+
 #==============================================================================
 class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
     def __init__(self, binaries=['Si', 'Ge'], pseudomorphic_strain:bool=False, 
-                 substrate:str|float=None, alloy_crystal_structure:str='zb', 
+                 substrate:str|float=None, growth_direction_hkl:list[int]=[0,0,1], 
+                 alloy_crystal_structure:str='zb', 
                  use_this_params:dict=None, alloy_type:str=None, 
                  save_file_dir='.', log_info:str='1'):
         self.save_dir_ = save_file_dir
@@ -23,13 +63,22 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
         
         _initiallize_kp_params.__init__(self)
         self._initalize_mater_parameters(binaries=binaries,
-                pseudomorphic_strain=pseudomorphic_strain, 
-                substrate=substrate, alloy_crystal_structure=alloy_crystal_structure, 
-                use_this_params=use_this_params, alloy_type=alloy_type)
+                        pseudomorphic_strain=pseudomorphic_strain, 
+                        substrate=substrate, growth_direction=growth_direction_hkl, 
+                        alloy_crystal_structure=alloy_crystal_structure, 
+                        use_this_params=use_this_params, alloy_type=alloy_type)
     
-    def kp_30x30(self, compositions:float|np.ndarray|list=None, kpath_list:str|list='L-G', 
-                 nkpoints:int=41, return_eigen_val_vec_both:bool=False,
+    def kp_30x30(self, compositions:float|np.ndarray|list=None,
+                 overwrite_strain:float|list|np.ndarray=None,
+                 kpoints_list:str|list='L-G', nkpoints:int=41, 
+                 return_eigen_val_vec_both:bool=False,
                  save_data:bool=False, save_file:str='eigenval.h5'):
+        
+        # overwrite_strain is the strain values for each composition. 
+        # If len(overwrite_strain) > len(compositions): only first len(compositions) values
+        # will be used for overwrite_strain, i.e. overwrite_strain_new = overwrite_strain[:len(compositions)]
+        # Note: This does not run array of strain values for a single composition number.
+        # In that case, one needs to explicitely loop over strain values outside this package.
         
         if isinstance(compositions, (int, float)):
             compositions = np.array([compositions], dtype=float)
@@ -38,13 +87,18 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
             
         self._get_alloy_params(compositions)
         
+        strain_tensor = (self._cal_pseudomorphic_strain(overwrite_strain)).T \
+                                if self.apply_strain_ else [None]*len(compositions)
+
         if self.alloy_crys_type_ == 'zb':
-            kpH = _kp_H_30x30_ZB(kpath_list=kpath_list, nkpoints=nkpoints, 
-                                 return_eigen_val_vec_both=return_eigen_val_vec_both)
+            _kp_H_30x30_ZB.__init__(self, kpoints_list=kpoints_list, nkpoints=nkpoints, 
+                                    return_eigen_val_vec_both=return_eigen_val_vec_both)
             eigenvalvecs_k_path = {}
             for ii in range(len(compositions)):
+                self.strain_tensor = strain_tensor[ii] 
+                #print(self.strain_tensor)
                 alloy_params_comp = {key: val[ii] for key, val in self.alloy_params_.items()}
-                eigenvalvecs_k_path[f'{compositions[ii]:0.5f}'] = kpH._diagonalize_H_30x30(alloy_params_comp)
+                eigenvalvecs_k_path[f'{compositions[ii]:0.5f}'] = self._diagonalize_H_30x30(alloy_params_comp)
         else:
             raise ValueError('Hamiltonian for only ZB structures is implemented so far. Contact developer.')
         
@@ -52,7 +106,8 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
             _SaveData2File._save_data_2_file(data=eigenvalvecs_k_path, save_dir=self.save_dir_, 
                                              file_name=save_file, print_log=self.log_output)
         return eigenvalvecs_k_path
-            
+
+#==============================================================================           
 class process_data(_SaveData2File):
     def __init__(self, save_file_dir='.', log_info:str=None):
         self.save_dir_ = save_file_dir
@@ -75,14 +130,15 @@ class process_data(_SaveData2File):
         return self._process_ek_data(f'{self.save_dir_}/{data_file_name}', 
                                      read_this_compos=read_this_compos,
                                      read_this_k_paths=read_this_k_paths)
-    
+
+#==============================================================================
 class plottings(_plot_bandstr):
     """
-    Plotting class for mobilitypy.
+    Plotting class.
     """
     def __init__(self, save_figure_dir='.', log_info:str=None):
         """
-        Intializing mobilitypy Plotting class.
+        Intializing Plotting class.
 
         Parameters
         ----------
@@ -109,3 +165,4 @@ class plottings(_plot_bandstr):
                                   color_map=color_map, show_legend=show_legend, show_colorbar=show_colorbar, 
                                   colorbar_label=colorbar_label, savefig=savefig, vmin=vmin, vmax=vmax, 
                                   show_plot=show_plot, **kwargs_savefig)
+#==============================================================================

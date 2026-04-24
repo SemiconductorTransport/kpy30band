@@ -6,11 +6,7 @@
 ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/Ge_LGX.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/GeSn_LGX.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/Sn_LGX.png)
 :------------------------------:| :------------------------------:| :------------------------------:
 Ge k.p bandstructure | GeSn k.p bandstructure | Sn k.p bandstructure
-<!-- Here absolute path is added since pypi documentation could not access package relative path
-![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/mobilities_300K.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/LFOM_norm_300K.png)
-:------------------------------:| :------------------------------:| :------------------------------:
-AlN/AlGaN HEMT 2DEG mobilities | AlN/AlGaN HEMT lateral figure of merit | AlN/AlGaN HEMT lateral figure of merit (Temperature effect) 
--->
+
 <!-- =========================================================== -->
 
 <!-- =========================================================== -->
