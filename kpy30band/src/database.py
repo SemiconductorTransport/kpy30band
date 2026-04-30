@@ -23,7 +23,7 @@
 #   f_1u5v=S_f_EG_1u25l, f_1w5d=S_f_EG_1l25u,
 #   f_5c1c=S_f_EG_152l,f_5c1q=S_f_EG_152u
 #   a_1c1q=S_a_EG_2l2u,a_1w1u=S_a_EG_1l1u,
-#   g_3t1q=S_g_EG_122u,g_3t1c=S_a_EG_122l
+#   g_3t1q=S_g_EG_122u,g_3t1c=S_g_EG_122l
 #   h_5c3t=S_h_EG_1512
 #==============================================================================
 
@@ -56,7 +56,7 @@ material_database = {
            'S_f_EG_1u25l': 0, 'S_f_EG_1l25u': 0,
            'S_f_EG_152l': 0, 'S_f_EG_152u': 0,
            'S_a_EG_2l2u': 0,'S_a_EG_1l1u': 0,
-           'S_g_EG_122u': 0, 'S_a_EG_122l': 0,
+           'S_g_EG_122u': 0, 'S_g_EG_122l': 0,
            'S_h_EG_1512': 0,
            # Elastic constants: C_ij parameters (GPa)
            'C_11': 0, 'C_12': 0, 'C_44': 0
@@ -86,10 +86,41 @@ material_database = {
            'S_f_EG_1u25l': -10.0, 'S_f_EG_1l25u': 0,
            'S_f_EG_152l': -19.0, 'S_f_EG_152u': -2.0,
            'S_a_EG_2l2u': 0.3,'S_a_EG_1l1u': -2,
-           'S_g_EG_122u': -10.5,'S_a_EG_122l': -4.5,
+           'S_g_EG_122u': -10.5,'S_g_EG_122l': -4.5,
            'S_h_EG_1512': 0,
            # Elastic constants: C_ij parameters (GPa)
            'C_11': 167.5, 'C_12': 65, 'C_44': 80.1
+	},
+    # 'Ge2' is same as 'Ge'. Because we have two sets of parameters for Ge.
+    'Ge2': { # Taken from Ref-1
+           # Lattice parameters
+           'lattice_a0': 5.658 , 
+           # E_Gamma (eV)
+           'EG_1u': 6.8, 'EG_2u': 14.0, 'EG_25u': 11.36, 
+           'EG_1l': -12.88, 'EG_2l': 0.89, 'EG_25l': 0.00, 
+           'EG_12': 10.3, 'EG_15': 3.113, 
+           # E_Delta (eV)
+           'ED_25u': 0.042, 'ED_15': 0.19, 'ED_25l': 0.296, 
+           'ED_25l25u': 0.22, 'ED_1525l': 0.0,
+           # Matrix element (eV.nm)
+           'P_25l2l': 0.85392, 'P_25u2l': 0.0144, 'P_25l2u': 0.1065, 'P_25u2u': 1.0071, 
+           'P_25l15': 0.7738, 'P_25u15': -0.5477, 'P_25l12': 0.4544, 'P_25u12': 0.5915, 
+           'P_1u15': 0.7929, 'P_1l15': 0.2664 , 'P_152l': 0.00, 'P_152u': 0.00,
+           # Strain parameters (Taken from Ref-3)
+           'S_l_EG_25l': -3.8, 'S_m_EG_25l': 4.9, 'S_n_EG_25l': -9.527,
+           'S_l_EG_15': 6.026, 'S_m_EG_15': 0.762, 'S_n_EG_15': -10.134,
+           'S_l_EG_25u': -20.692, 'S_m_EG_25u': 9.119, 'S_n_EG_25u': 0.481,
+           'S_a_12': 6.815, 'S_b_12': 6.798, 'S_c_12': 7.745, 'S_d_12': 4.858,
+           'S_a_EG_2l': -7.181, 'S_a_EG_2u': 4.490, 'S_a_EG_1l': 14.171, 'S_a_EG_1u': -0.492,
+           'S_l_EG_25l25u': -24.139, 'S_m_EG_25l25u': -0.124, 'S_n_EG_25l25u': -0.112,
+           'S_f_EG_1u25u': 11.220, 'S_f_EG_1l25l': -7.666, 
+           'S_f_EG_1u25l': -12.210, 'S_f_EG_1l25u': 0,
+           'S_f_EG_152l': -22.242, 'S_f_EG_152u': 19.925,
+           'S_a_EG_2l2u': -1.211,'S_a_EG_1l1u': -5.927,
+           'S_g_EG_122u': -5.000,'S_g_EG_122l': -5.354,
+           'S_h_EG_1512': 0,
+           # Elastic constants: C_ij parameters (GPa)
+           'C_11': 132.8, 'C_12': 46.8, 'C_44': 66.57
 	},
     'Ge': { # Taken from Ref-2
            # Lattice parameters
@@ -113,10 +144,10 @@ material_database = {
            'S_a_EG_2l': -7.181, 'S_a_EG_2u': 4.490, 'S_a_EG_1l': 14.171, 'S_a_EG_1u': -0.492,
            'S_l_EG_25l25u': -24.139, 'S_m_EG_25l25u': -0.124, 'S_n_EG_25l25u': -0.112,
            'S_f_EG_1u25u': 11.220, 'S_f_EG_1l25l': -7.666, 
-           'S_f_EG_1u25l': 12.210, 'S_f_EG_1l25u': 0,
+           'S_f_EG_1u25l': -12.210, 'S_f_EG_1l25u': 0,
            'S_f_EG_152l': -22.242, 'S_f_EG_152u': 19.925,
            'S_a_EG_2l2u': -1.211,'S_a_EG_1l1u': -5.927,
-           'S_g_EG_122u': -5.000,'S_a_EG_122l': -5.354,
+           'S_g_EG_122u': -5.000,'S_g_EG_122l': -5.354,
            'S_h_EG_1512': 0,
            # Elastic constants: C_ij parameters (GPa)
            'C_11': 131.5, 'C_12': 49.4, 'C_44': 68.4
@@ -146,14 +177,14 @@ material_database = {
            'S_f_EG_1u25l': 7.293, 'S_f_EG_1l25u': 0,
            'S_f_EG_152l': 15.868, 'S_f_EG_152u': 44.263,
            'S_a_EG_2l2u': -2.592,'S_a_EG_1l1u': 8.543,
-           'S_g_EG_122u': -1.721,'S_a_EG_122l': -9.579,
+           'S_g_EG_122u': -1.721,'S_g_EG_122l': -9.579,
            'S_h_EG_1512': 0,
            # Elastic constants: C_ij parameters (GPa)
            'C_11': 69.0, 'C_12': 34.0, 'C_44': 30.0
 	},
     #==========================================================================
     # Alloys
-    'SiGe': { # Taken from Ref-1 (need to go through it again)
+    'SiGe2': { # Taken from Ref-1 (need to go through it again)
            # Lattice parameters
            'lattice_a0': 0, 
            # E_Gamma (eV)
@@ -161,12 +192,12 @@ material_database = {
            'EG_1l': 0.0000, 'EG_2l': 0.0000, 'EG_25l': 0.0000, 
            'EG_12': 0.0000, 'EG_15': 0.0000, 
            # E_Delta (eV)
-           'ED_25u': 0.0000, 'ED_15': 0.0000, 'ED_25l': 0.0000, 
-           'ED_25l25u': 0.0000, 'ED_1525l': 0.0000,
+           'ED_25u': 0.0000, 'ED_15': 0.0000, 'ED_25l': 0.052, 
+           'ED_25l25u': 0.0000, 'ED_1525l': 0.04,
            # Matrix element (eV.nm)
-           'P_25l2l': 0.0000, 'P_25u2l': 0.0000, 'P_25l2u': 0.0000, 'P_25u2u': 0.0000, 
+           'P_25l2l': 0.0000, 'P_25u2l': -0.036, 'P_25l2u': 0.0000, 'P_25u2u': 0.0000, 
            'P_25l15': 0.0000, 'P_25u15': 0.0000, 'P_25l12': 0.0000, 'P_25u12': 0.0000, 
-           'P_1u15': 0.0000, 'P_1l15': 0.0000, 'P_152l': 0.0000, 'P_152u': 0.0000,
+           'P_1u15': -0.0288, 'P_1l15': 0.0000, 'P_152l': -0.1j, 'P_152u': 0.3j,
            # Strain parameters (Taken from Ref-3)
            'S_l_EG_25l': 0.0000, 'S_m_EG_25l': 0.0000, 'S_n_EG_25l': 0.0000,
            'S_l_EG_15': 0.0000, 'S_m_EG_15': 0.0000, 'S_n_EG_15': 0.0000,
@@ -178,7 +209,7 @@ material_database = {
            'S_f_EG_1u25l': 0.0000, 'S_f_EG_1l25u': 0.0000,
            'S_f_EG_152l': 0.0000, 'S_f_EG_152u': 0.0000,
            'S_a_EG_2l2u': 0.0000,'S_a_EG_1l1u': 0.0000,
-           'S_g_EG_122u': 0.0000,'S_a_EG_122l': 0.0000,
+           'S_g_EG_122u': 0.0000,'S_g_EG_122l': 0.0000,
            'S_h_EG_1512': 0.0000,
            'C_11': 0.0000, 'C_12': 0.0000, 'C_44': 0.0000
 	},
@@ -207,7 +238,7 @@ material_database = {
            'S_f_EG_1u25l': 0.0000, 'S_f_EG_1l25u': 0.000,
            'S_f_EG_152l': 0.0000, 'S_f_EG_152u': 0.0000,
            'S_a_EG_2l2u': 0.0000,'S_a_EG_1l1u': 0.0000,
-           'S_g_EG_122u': 0.0000,'S_a_EG_122l': 0.0000,
+           'S_g_EG_122u': 0.0000,'S_g_EG_122l': 0.0000,
            'S_h_EG_1512': 0.0000,
            'C_11': 0.0000, 'C_12': 0.0000, 'C_44': 0.0000
 	}

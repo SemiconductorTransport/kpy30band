@@ -28,8 +28,8 @@ class _plot_bandstr(_GeneratePlots):
        """
         _GeneratePlots.__init__(self, save_figure_dir=save_figure_dir, log_info=log_info)
         
-    def _plot(self, kpts, bands_energy, special_kpts=None, fig=None, ax=None, save_file_name=None, 
-              ymin=None, ymax=None, mode:str= 'bandstructure', annotate_pos=(0,0), 
+    def _plot(self, kpts, bands_energy, special_kpts=None, fig=None, ax=None, 
+              save_file_name=None, ymin=None, ymax=None, annotate_pos=(0,0), 
               annotatetextoffset=(0,-20),title_text:str=None, xaxis_label:str=None, 
               yaxis_label:str=r'E (eV)', ls_spkpt='--', lc_spkpt='gray',
               color='gray', line_style='-', color_map='viridis', show_legend:bool=False, 
@@ -48,16 +48,16 @@ class _plot_bandstr(_GeneratePlots):
         self.ax.set_ylim([ymin, ymax])
         self.ax.set_xlim([min(kpts), max(kpts)])
 
-        if title_text is not None: ax.set_title(title_text)
+        if title_text is not None: self.ax.set_title(title_text)
         
         #ax, return_plot = self._plot_2d_plane(results, ax, color=color, ls=ls_2d)
-        if mode == 'bandstructure':
+        if self.plot_mode == 'band_structure':
             self._plot_bandstructure(kpts, bands_energy, special_xticks=special_kpts, 
                                      color=color, ls=line_style, ls_spkpt=ls_spkpt, 
                                      lc_spkpt=lc_spkpt)
             return_plot = None
         else:
-            raise ValueError('Requested plot mode is not allowed')
+            raise ValueError(f'Requested plot mode {self.plot_mode} has not been implemented yet. Contact developer.')
             
         if show_colorbar and (self.fig is not None):
             cbar = self.fig.colorbar(return_plot)
@@ -78,7 +78,7 @@ class _plot_bandstr(_GeneratePlots):
             self._save_figure(save_file_name, savefig=savefig, show_plot=show_plot, 
                               fig=self.fig, **kwargs_savefig)
             
-        return self.fig, self.ax
+        return 
     
     @classmethod
     def _map_special_kpoints_labels(cls, special_kpts_pos, special_kpts_label):

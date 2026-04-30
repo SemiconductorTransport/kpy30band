@@ -127,9 +127,7 @@ Chekout out [version release history here](https://github.com/SemiconductorTrans
 
 <!-- =========================================================== -->
 ## Upcoming (TBD)
-1. Allow k.p calculations at specific k point
-2. Add documentation
-3. Implement strained kp hamiltonian
-4. Implement effective mass calculation
+1. Add documentation
+2. Implement effective mass calculation
 <!-- =========================================================== -->
 

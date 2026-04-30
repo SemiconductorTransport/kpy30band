@@ -14,7 +14,7 @@ class _initiallize_kp_params(_AlloyParams):
         self.print_info = print_log
     
     def _initalize_mater_parameters(self, binaries=['Si', 'Ge'], pseudomorphic_strain:bool=False, 
-                                    substrate:str|float=None, growth_direction:list[int]=[0,0,1],
+                                    substrate:str|float='test_sample', growth_direction:list[int]=[0,0,1],
                                     alloy_crystal_structure:str='zb', 
                                     use_this_params:dict=None, alloy_type:str=None):
         if pseudomorphic_strain and (substrate is None):
@@ -28,16 +28,19 @@ class _initiallize_kp_params(_AlloyParams):
         if pseudomorphic_strain: 
             self.apply_strain_ = True
             self.biaxial_substrate = substrate
-            self.growth_hkl = growth_direction
+            self.growth_hkl = np.array(growth_direction, dtype=float)
             
         
 #%% ===========================================================================
 class _kpoints_from_point_path:
-    kpath_map = {'G':[0,0,0], 'L':[0.5,0.5,0.5], 'X':[0,0.5,0.5]}
-    def __init__(self):
-        pass
-    @classmethod
-    def _generate_k_points_from_point_path(cls, kpath:str|list='L-G', nkpts=41):
+    def __init__(self, crys_type_):
+        if crys_type_ in ['zb', 'dm', 'cube']:
+            self.kpath_map = {'G':[0.0,0.0,0.0], 'L':[0.5,0.5,0.5], 'X':[0.0,0.0,1.0], 
+                              'K':[0.75,0.75,0.0], 'W':[0.5,0.0,1.0], 'U':[0.25,0.25,1.0]}
+        else:
+            raise ValueError(f'Special k-points for {crys_type_} is not available yet. Contact developer.')
+
+    def _generate_k_points_from_point_path(self, kpath:str|list='L-G', nkpts:int=11):
         ## kpath = 'L-G'; ['L-G']; ['L-G','G-X']; [L, G, X]; [0,0.5,0.5];
         ##         [[0,0.5,0.5], [0,0.45,0.45], [0,0.35,0.35], ...];
         ##         [[0,0.5,0.5], [0,0.45,0.45], 'L-G', 'L', ...] # mixed array
@@ -45,7 +48,7 @@ class _kpoints_from_point_path:
         k_points_dict = {}
         
         if isinstance(kpath, str):
-            k_points_dict[kpath] = cls._generate_k_points_from_k_str(kpath, nkpts)
+            k_points_dict[kpath] = self._generate_k_points_from_k_str(kpath, nkpts)
         else:
             try: # pure numbers or pure strings
                 kpath = np.array(kpath)
@@ -59,26 +62,25 @@ class _kpoints_from_point_path:
                 pass
             for ii, kpath_frac in enumerate(kpath):
                 if isinstance(kpath_frac, str):
-                    k_points_dict[kpath_frac] = cls._generate_k_points_from_k_str(kpath_frac, nkpts)
+                    k_points_dict[kpath_frac] = self._generate_k_points_from_k_str(kpath_frac, nkpts)
                 else:
                     k_points_dict[str(ii)] =  np.array([kpath_frac])
         return k_points_dict  
     
-    @classmethod
-    def _generate_k_points_from_k_str(cls, kpath_frac:str, nkpts):
+    def _generate_k_points_from_k_str(self, kpath_frac, nkpts):
         k_point_name = kpath_frac.split('-') 
         lenkpts = len(k_point_name)
         if lenkpts == 2:
             for kname in k_point_name:
-                cls._check_special_kp_name_in_defined(kname)
-            return np.linspace(cls.kpath_map[k_point_name[0]], 
-                               cls.kpath_map[k_point_name[1]], nkpts)
+                self._check_special_kp_name_in_defined(kname)
+            return np.linspace(self.kpath_map[k_point_name[0]], 
+                               self.kpath_map[k_point_name[1]], nkpts)
         elif lenkpts > 2:
             raise ValueError('only two kpoint name is allowed in k_point_name. E.g., L-G')
         else:
-            cls._check_special_kp_name_in_defined(k_point_name[0])
-            return np.array([cls.kpath_map[k_point_name[0]]])
-    @classmethod  
-    def _check_special_kp_name_in_defined(cls, kname):
-        if kname not in cls.kpath_map.keys():
+            self._check_special_kp_name_in_defined(k_point_name[0])
+            return np.array([self.kpath_map[k_point_name[0]]])
+        
+    def _check_special_kp_name_in_defined(self, kname):
+        if kname not in self.kpath_map.keys():
             raise ValueError(f'{kname} special k-point is not defined in database yet. contact developer.')

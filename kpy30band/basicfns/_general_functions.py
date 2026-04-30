@@ -59,7 +59,12 @@ class _SaveData2File:
         with h5py.File(full_file_path_name, 'r') as f:
             # Data structure: composition group => k-path sheets
             read_compos = list(f.keys()) if read_this_compos is None else read_this_compos
-            read_f = f[read_compos[0]].keys() if read_this_k_paths is None else read_this_k_paths
+            if read_this_k_paths is None:
+                read_f = f[read_compos[0]].keys()
+            elif isinstance(read_this_k_paths, str):
+                read_f = [read_this_k_paths]
+            else:
+                read_f = read_this_k_paths
             for compos in read_compos: # composition loop
                 plot_data[compos] = {}
                 for k_paths in read_f: # k-path loop
