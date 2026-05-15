@@ -28,10 +28,10 @@ class _plot_bandstr(_GeneratePlots):
        """
         _GeneratePlots.__init__(self, save_figure_dir=save_figure_dir, log_info=log_info)
         
-    def _plot(self, kpts, bands_energy, special_kpts=None, fig=None, ax=None, 
-              save_file_name=None, ymin=None, ymax=None, annotate_pos=(0,0), 
-              annotatetextoffset=(0,-20),title_text:str=None, xaxis_label:str=None, 
-              yaxis_label:str=r'E (eV)', ls_spkpt='--', lc_spkpt='gray',
+    def _plot(self, kpts, bands_energy, special_kpts=None, fig=None,  
+              ax=None, save_file_name=None, ymin=None, ymax=None, 
+              annotate_text={'text':None, 'pos':(0,0)}, title_text:str=None,  
+              xaxis_label:str=None, yaxis_label:str=r'E (eV)', ls_spkpt='--', lc_spkpt='gray',
               color='gray', line_style='-', color_map='viridis', show_legend:bool=False, 
               show_colorbar:bool=False, colorbar_label:str=None, savefig:bool=False,
               vmin=None, vmax=None, show_plot:bool=True, **kwargs_savefig):
@@ -49,6 +49,11 @@ class _plot_bandstr(_GeneratePlots):
         self.ax.set_xlim([min(kpts), max(kpts)])
 
         if title_text is not None: self.ax.set_title(title_text)
+        if annotate_text.get('text'): 
+            self.ax.annotate(annotate_text['text'], (0,0), 
+                             xytext=annotate_text['pos'], 
+                             textcoords='axes fraction',
+                             va="center", ha="center")
         
         #ax, return_plot = self._plot_2d_plane(results, ax, color=color, ls=ls_2d)
         if self.plot_mode == 'band_structure':

@@ -36,9 +36,9 @@ class _kp_H_30x30(_kpoints_from_point_path):
         return (150.41206484194905*np.sum(kpts_arr*kpts_arr, axis=1)/(self.a0*self.a0), 
                 62.83185307179586/self.a0*kpts_arr)
 
-    def _diagonalize_H_30x30(self, kp_params_, strain_tensor_):
+    def _diagonalize_H_30x30(self, kp_params_, strain_tensor_xyz_):
         self.kp_params = kp_params_
-        self.strain_tensor = strain_tensor_
+        self.strain_tensor = strain_tensor_xyz_ # [e_xx, e_yy, e_zz, e_yz, e_xz, e_xy]
         self.a0 = self.kp_params['lattice_a0']
         # TODO: Implement multiprocessing over compositions if len(self.k_points) > 1E3 for e.g.
         eigenvalvecs_k_path = {}
@@ -72,38 +72,38 @@ class _kp_H_30x30(_kpoints_from_point_path):
         H_diag = np.zeros((30,30), dtype=np.complex128)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Diagonal blocks
-        H_diag[0:2, 0:2]     = self._H_diag_blocks(self.kp_params['EG_2u'], mat_dim=2) # H_2x2_2u
-        H_diag[2:8, 2:8]     = self._H_diag_blocks(self.kp_params['EG_25u'], 
-                                                   Edelta=self.kp_params['ED_25u'],
+        H_diag[0:2, 0:2]     = self._H_diag_blocks(self.kp_params['EG_1q'], mat_dim=2) # H_2x2_2u
+        H_diag[2:8, 2:8]     = self._H_diag_blocks(self.kp_params['EG_5d'], 
+                                                   Edelta=self.kp_params['ED_d'],
                                                    mat_dim=6) # H_6x6_25u
-        H_diag[8:12, 8:12]   = self._H_diag_blocks(self.kp_params['EG_12'], mat_dim=4) # H_4x4_12
+        H_diag[8:12, 8:12]   = self._H_diag_blocks(self.kp_params['EG_3'], mat_dim=4) # H_4x4_12
         H_diag[12:14, 12:14] = self._H_diag_blocks(self.kp_params['EG_1u'], mat_dim=2) # H_2x2_1u 
-        H_diag[14:16, 14:16] = self._H_diag_blocks(self.kp_params['EG_1l'], mat_dim=2) # H_2x2_1l
-        H_diag[16:22, 16:22] = self._H_diag_blocks(self.kp_params['EG_15'], 
-                                                   Edelta=self.kp_params['ED_15'],
+        H_diag[14:16, 14:16] = self._H_diag_blocks(self.kp_params['EG_1v'], mat_dim=2) # H_2x2_1l
+        H_diag[16:22, 16:22] = self._H_diag_blocks(self.kp_params['EG_5c'], 
+                                                   Edelta=self.kp_params['ED_c'],
                                                    mat_dim=6) # H_6x6_15
-        H_diag[22:24, 22:24] = self._H_diag_blocks(self.kp_params['EG_2l'], mat_dim=2) # H_2x2_2l
-        H_diag[24:30, 24:30] = self._H_diag_blocks(self.kp_params['EG_25l'], 
-                                                   Edelta=self.kp_params['ED_25l'],
+        H_diag[22:24, 22:24] = self._H_diag_blocks(self.kp_params['EG_1'], mat_dim=2) # H_2x2_2l
+        H_diag[24:30, 24:30] = self._H_diag_blocks(self.kp_params['EG_5'], 
+                                                   Edelta=self.kp_params['ED_so'],
                                                    mat_dim=6) # H_6x6_25l
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Off-diagonal block
-        H_off_diag[0:2, 2:8]     = self._Hk_2x6(mul_fact=self.kp_params['P_25u2u']) # H_2x6_p4
-        H_off_diag[0:2, 16:22]   = self._Hk_2x6(mul_fact=self.kp_params['P_152u']) # H_2x6_s2
-        H_off_diag[0:2, 24:30]   = self._Hk_2x6(mul_fact=self.kp_params['P_25l2u']) # H_2x6_p3
-        H_off_diag[2:8, 8:12]    = self._Hk_4x6(mul_fact=self.kp_params['P_25u12']).T # H_6x4_r2
-        H_off_diag[2:8, 16:22]   = self._Hk_6x6(mul_fact=self.kp_params['P_25u15']) # H_6x6_q2
-        H_off_diag[2:8, 22:24]   = self._Hk_2x6(mul_fact=self.kp_params['P_25u2l']).T # H_6x2_p2
-        H_off_diag[8:12, 24:30]  = self._Hk_4x6(mul_fact=self.kp_params['P_25l12']) # H_4x6_r1
-        H_off_diag[12:14, 16:22] = self._Hk_2x6(mul_fact=self.kp_params['P_1u15']) # H_2x6_t1
-        H_off_diag[14:16, 16:22] = self._Hk_2x6(mul_fact=self.kp_params['P_1l15']) # H_2x6_t2
-        H_off_diag[16:22, 22:24] = self._Hk_2x6(mul_fact=self.kp_params['P_152l']).T # H_6x2_s1
-        H_off_diag[16:22, 24:30] = self._Hk_6x6(mul_fact=self.kp_params['P_25l15']) + \
-                                            self._H_G_SO(self.kp_params['ED_1525l']) # H_6x6_q1
-        H_off_diag[22:24, 24:30] = self._Hk_2x6(mul_fact=self.kp_params['P_25l2l']) # H_2x6_p1
+        H_off_diag[0:2, 2:8]     = self._Hk_2x6(mul_fact=self.kp_params['P_P2d']) # H_2x6_p4
+        H_off_diag[0:2, 16:22]   = self._Hk_2x6(mul_fact=self.kp_params['P_P2prime']) # H_2x6_s2
+        H_off_diag[0:2, 24:30]   = self._Hk_2x6(mul_fact=self.kp_params['P_P2']) # H_2x6_p3
+        H_off_diag[2:8, 8:12]    = self._Hk_4x6(mul_fact=self.kp_params['P_P3d']).T # H_6x4_r2
+        H_off_diag[2:8, 16:22]   = self._Hk_6x6(mul_fact=self.kp_params['P_Pxd']) # H_6x6_q2
+        H_off_diag[2:8, 22:24]   = self._Hk_2x6(mul_fact=self.kp_params['P_Pd']).T # H_6x2_p2
+        H_off_diag[8:12, 24:30]  = self._Hk_4x6(mul_fact=self.kp_params['P_P3']) # H_4x6_r1
+        H_off_diag[12:14, 16:22] = self._Hk_2x6(mul_fact=self.kp_params['P_Pu']) # H_2x6_t1
+        H_off_diag[14:16, 16:22] = self._Hk_2x6(mul_fact=self.kp_params['P_Ps']) # H_2x6_t2
+        H_off_diag[16:22, 22:24] = self._Hk_2x6(mul_fact=self.kp_params['P_Pprime']).T # H_6x2_s1
+        H_off_diag[16:22, 24:30] = self._Hk_6x6(mul_fact=self.kp_params['P_Px']) + \
+                                            self._H_G_SO(self.kp_params['ED_prime']) # H_6x6_q1
+        H_off_diag[22:24, 24:30] = self._Hk_2x6(mul_fact=self.kp_params['P_P']) # H_2x6_p1
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Off-diagonal SO block
-        H_off_diag[2:8, 24:30] = self._H_G_SO(self.kp_params['ED_25l25u'])
+        H_off_diag[2:8, 24:30] = self._H_G_SO(self.kp_params['ED_dso'])
         
         return H_diag + H_off_diag + np.conjugate(H_off_diag).T 
     
@@ -157,53 +157,53 @@ class _kp_H_30x30(_kpoints_from_point_path):
         
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Diagonal blocks
-        W_diag[0:2, 0:2]     = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_2u']) 
-        W_diag[2:8, 2:8]     = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_25u'],
-                                                       self.kp_params['S_m_EG_25u'],
-                                                       self.kp_params['S_n_EG_25u'])
-        W_diag[8:12, 8:12]   = self._W_diag_blocks_4x4(self.kp_params['S_a_12'],
-                                                       self.kp_params['S_b_12'],
-                                                       self.kp_params['S_c_12'],
-                                                       self.kp_params['S_d_12'])
+        W_diag[0:2, 0:2]     = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1q']) 
+        W_diag[2:8, 2:8]     = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_5d'],
+                                                       self.kp_params['S_m_EG_5d'],
+                                                       self.kp_params['S_n_EG_5d'])
+        W_diag[8:12, 8:12]   = self._W_diag_blocks_4x4(self.kp_params['S_a_3'],
+                                                       self.kp_params['S_b_3'],
+                                                       self.kp_params['S_c_3'],
+                                                       self.kp_params['S_d_3'])
         W_diag[12:14, 12:14] = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1u']) 
-        W_diag[14:16, 14:16] = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1l'])
-        W_diag[16:22, 16:22] = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_15'],
-                                                       self.kp_params['S_m_EG_15'],
-                                                       self.kp_params['S_n_EG_15'])
-        W_diag[22:24, 22:24] = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_2l']) 
-        W_diag[24:30, 24:30] = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_25l'],
-                                                       self.kp_params['S_m_EG_25l'],
-                                                       self.kp_params['S_n_EG_25l'])
+        W_diag[14:16, 14:16] = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1v'])
+        W_diag[16:22, 16:22] = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_5c'],
+                                                       self.kp_params['S_m_EG_5c'],
+                                                       self.kp_params['S_n_EG_5c'])
+        W_diag[22:24, 22:24] = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1']) 
+        W_diag[24:30, 24:30] = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_5'],
+                                                       self.kp_params['S_m_EG_5'],
+                                                       self.kp_params['S_n_EG_5'])
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Off-diagonal k-independent blocks
-        W_off_diag[0:2, 8:12]    = self._W_off_diag_blocks_4x2(self.kp_params['S_g_EG_122u']).T
-        W_off_diag[0:2, 16:22]   = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_152u'])
-        W_off_diag[0:2, 22:24]   = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_2l2u'])
-        W_off_diag[2:8, 14:16]   = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1u25u']).T
-        W_off_diag[2:8, 16:18]   = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1l25u']).T
-        W_off_diag[2:8, 24:30]   = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_25l25u'],
-                                                           self.kp_params['S_m_EG_25l25u'],
-                                                           self.kp_params['S_n_EG_25l25u'])
-        W_off_diag[8:12, 16:22]  = self._W_off_diag_blocks_4x6(self.kp_params['S_h_EG_1512']) 
-        W_off_diag[8:12, 22:24]  = self._W_off_diag_blocks_4x2(self.kp_params['S_g_EG_122l'])
-        W_off_diag[12:14, 14:16] = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1l1u'])
-        W_off_diag[12:14, 24:30] = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1u25l'])
-        W_off_diag[14:16, 24:30] = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1l25l'])
-        W_off_diag[16:22, 22:24] = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_152l']).T
+        W_off_diag[0:2, 8:12]    = self._W_off_diag_blocks_4x2(self.kp_params['S_g_EG_31q']).T
+        W_off_diag[0:2, 16:22]   = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_5c1q'])
+        W_off_diag[0:2, 22:24]   = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_11q'])
+        W_off_diag[2:8, 14:16]   = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1u5d']).T
+        W_off_diag[2:8, 16:18]   = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1v5d']).T
+        W_off_diag[2:8, 24:30]   = self._W_diag_blocks_6x6(self.kp_params['S_l_EG_55d'],
+                                                           self.kp_params['S_m_EG_55d'],
+                                                           self.kp_params['S_n_EG_55d'])
+        W_off_diag[8:12, 16:22]  = self._W_off_diag_blocks_4x6(self.kp_params['S_h_EG_5c3']) 
+        W_off_diag[8:12, 22:24]  = self._W_off_diag_blocks_4x2(self.kp_params['S_g_EG_31'])
+        W_off_diag[12:14, 14:16] = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1v1u'])
+        W_off_diag[12:14, 24:30] = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1u5'])
+        W_off_diag[14:16, 24:30] = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_1v5'])
+        W_off_diag[16:22, 22:24] = self._W_off_diag_blocks_2x6(self.kp_params['S_f_EG_5c1']).T
         
         # Off-diagonal block k-dependent blocks
         W_6x6, W_4x6, W_2x6 = self._Wk_off_diagonal()
         
-        W_off_diag[0:2, 2:8]     = self.kp_params['P_25u2u'] * W_2x6
-        W_off_diag[0:2, 24:30]   = self.kp_params['P_25l2u'] * W_2x6
-        W_off_diag[2:8, 8:12]    = self.kp_params['P_25u12'] * W_4x6.T 
-        W_off_diag[2:8, 16:22]   = self.kp_params['P_25u15'] * W_6x6
-        W_off_diag[2:8, 22:24]   = self.kp_params['P_25u2l'] * W_2x6.T 
-        W_off_diag[8:12, 24:30]  = self.kp_params['P_25l12'] * W_4x6
-        W_off_diag[12:14, 16:22] = self.kp_params['P_1u15']  * W_2x6
-        W_off_diag[14:16, 16:22] = self.kp_params['P_1l15']  * W_2x6
-        W_off_diag[16:22, 24:30] = self.kp_params['P_25l15'] * W_6x6 
-        W_off_diag[22:24, 24:30] = self.kp_params['P_25l2l'] * W_2x6 
+        W_off_diag[0:2, 2:8]     = self.kp_params['P_P2d'] * W_2x6
+        W_off_diag[0:2, 24:30]   = self.kp_params['P_P2'] * W_2x6
+        W_off_diag[2:8, 8:12]    = self.kp_params['P_P3d'] * W_4x6.T 
+        W_off_diag[2:8, 16:22]   = self.kp_params['P_Pxd'] * W_6x6
+        W_off_diag[2:8, 22:24]   = self.kp_params['P_Pd'] * W_2x6.T 
+        W_off_diag[8:12, 24:30]  = self.kp_params['P_P3'] * W_4x6
+        W_off_diag[12:14, 16:22] = self.kp_params['P_Pu']  * W_2x6
+        W_off_diag[14:16, 16:22] = self.kp_params['P_Ps']  * W_2x6
+        W_off_diag[16:22, 24:30] = self.kp_params['P_Px'] * W_6x6 
+        W_off_diag[22:24, 24:30] = self.kp_params['P_P'] * W_2x6 
         
         #print(W_diag + W_off_diag)
         return W_diag + W_off_diag + np.conjugate(W_off_diag).T 

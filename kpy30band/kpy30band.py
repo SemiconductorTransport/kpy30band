@@ -56,7 +56,7 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
     def __init__(self, binaries=['Si', 'Ge'], pseudomorphic_strain:bool=False, 
                  substrate:str|float='test_sample', growth_direction_hkl:list[int]=[0,0,1], 
                  alloy_crystal_structure:str='zb', alloy_type:str=None, 
-                 use_this_params:dict=None, mode:str='band_structure', 
+                 use_mat_params:str|dict='default', mode:str='band_structure', 
                  save_file_dir='.', log_info:str='1'):
         self.kp_cal_mode = mode # To be used in the future when needed
         if self.kp_cal_mode not in ['band_structure']:
@@ -69,13 +69,13 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
                         pseudomorphic_strain=pseudomorphic_strain, 
                         substrate=substrate, growth_direction=growth_direction_hkl, 
                         alloy_crystal_structure=alloy_crystal_structure, 
-                        use_this_params=use_this_params, alloy_type=alloy_type)
+                        use_this_params=use_mat_params, alloy_type=alloy_type)
     
     def kp_30x30(self, compositions:float|np.ndarray|list=None,
                  overwrite_strain:float|list|np.ndarray=None,
                  kpoints_list:str|list='L-G', nkpoints:int=41, 
                  cal_band_indices=[0,10], cal_band_E_btw_values=None, # These allow performance improvement
-                 return_eigen_val_only:bool=True,
+                 return_energy_only:bool=True,
                  save_data:bool=False, save_file:str='eigenval.h5'):
         
         # overwrite_strain is the strain values for each composition. 
@@ -89,13 +89,16 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
             compositions = np.array(compositions, dtype=float)
         # Calculating alloy parameters    
         self._get_alloy_params(compositions)
-        # Calculating strain tensor
-        strain_tensor = (self._cal_pseudomorphic_strain(overwrite_strain)) \
-                                if self.apply_strain_ else [None]*len(compositions)
+        # Calculating strain tensor in crystal coordinate system
+        # Note: This strain tensor is not in voigt notation
+        if self.apply_pseudomorphic_strain_: # For biaxial strain
+            strain_tensor_xyz = self._cal_pseudomorphic_strain(overwrite_strain)
+        else:
+            strain_tensor_xyz = [None]*len(compositions)
         # Initializing Hamiltonian corresponding to the crystal structure
         if self.alloy_crys_type_ in ['zb', 'dm', 'cube']:
             kp = _kp_H_30x30_ZB(kpoints_list = kpoints_list, nkpoints = nkpoints, 
-                                return_eigen_val_only = return_eigen_val_only,
+                                return_eigen_val_only = return_energy_only,
                                 cal_band_indices_ = cal_band_indices, 
                                 cal_band_E_btw_values_ = cal_band_E_btw_values)
         else:
@@ -106,7 +109,7 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
         for ii in range(len(compositions)):
             alloy_params_comp = {key: val[ii] for key, val in self.alloy_params_.items()}
             eigenvalvecs_k_path[f'{compositions[ii]:0.5f}'] = kp._diagonalize_H_30x30(alloy_params_comp,
-                                                                                      strain_tensor[ii])
+                                                                                      strain_tensor_xyz[ii])
         # Save the eigenvalues in a file
         if save_data:
             _SaveData2File._save_data_2_file(data=eigenvalvecs_k_path, save_dir=self.save_dir_, 
@@ -164,16 +167,15 @@ class plottings(_plot_bandstr):
             raise ValueError(f'Requested {self.plot_mode} plotting mode has not been implemented yet. Contact developer.')
         
     def plot(self, kpts, bands_energy, special_kpts=None, fig=None, ax=None, 
-             save_file_name=None, ymin=None, ymax=None, annotate_pos=(0,0), 
-             annotatetextoffset=(0,-20),title_text:str=None, xaxis_label:str=None, 
-             yaxis_label:str=r'E (eV)', ls_spkpt='--', lc_spkpt='gray',
-             color='k', line_style='-', color_map='viridis', show_legend:bool=False, 
-             show_colorbar:bool=False, colorbar_label:str=None, savefig:bool=False,
-             vmin=None, vmax=None, show_plot:bool=True, **kwargs_savefig):
+             save_file_name=None, ymin=None, ymax=None, annotate_text={'text':None,'pos':(0,0)},
+             title_text:str=None, xaxis_label:str=None, yaxis_label:str=r'E (eV)', 
+             ls_spkpt='--', lc_spkpt='gray', color='k', line_style='-', color_map='viridis', 
+             show_legend:bool=False, show_colorbar:bool=False, colorbar_label:str=None, 
+             savefig:bool=False, vmin=None, vmax=None, show_plot:bool=True, **kwargs_savefig):
         return self._plot(kpts, bands_energy, special_kpts=special_kpts, fig=fig, ax=ax, 
                                   save_file_name=save_file_name, ymin=ymin, ymax=ymax, 
-                                  annotate_pos=annotate_pos, annotatetextoffset=annotatetextoffset,
-                                  title_text=title_text, xaxis_label=xaxis_label, yaxis_label=yaxis_label, 
+                                  annotate_text=annotate_text, title_text=title_text, 
+                                  xaxis_label=xaxis_label, yaxis_label=yaxis_label, 
                                   ls_spkpt=ls_spkpt, lc_spkpt=lc_spkpt, color=color, line_style=line_style, 
                                   color_map=color_map, show_legend=show_legend, show_colorbar=show_colorbar, 
                                   colorbar_label=colorbar_label, savefig=savefig, vmin=vmin, vmax=vmax, 

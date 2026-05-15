@@ -2,7 +2,7 @@ from .database import material_database
 import numpy as np
 #import warnings
 
-## ==============================================================================
+# ============================================================================
 class _AlloyParams:
     '''
     The functions in this class calculates the parameters for alloy from their
@@ -59,7 +59,7 @@ class _AlloyParams:
         # Get parameters from database and update it if use_mat_params is not none.
         self.bin_params_dbs = self._get_params_from_database(use_this_params)
         # Initializing the apply strain keyword
-        self.apply_strain_ = False
+        self.apply_pseudomorphic_strain_ = False
     
     @staticmethod
     def _update_material_params_locally(use_mat_params, params_db):
@@ -129,15 +129,59 @@ class _AlloyParams:
         for mat_name in self.bins_:
             params_db[mat_name] = material_database.get(mat_name).copy()
 
-        if use_mat_params is None:
+        if use_mat_params in ['default', None]:
             return params_db  
         else:
             #####_update_database_data_locally
             if alloy_name in use_mat_params:
                 use_mat_params[self.alloy_name] = use_mat_params.pop(alloy_name)
             return self._update_material_params_locally(use_mat_params, params_db)
+
+    ## ------ Functions to calculate the alloy parameters from binaries -------
+    def _get_two_comp_component_alloy_params(self, x):
+        """
+        This function calculates the parameters for a 2-composition component alloy 
+        from itsbinary component parameters using quadratic interpolation.
+        E.g. for any parameter, P:
+            P_SixGe1-x = x*P_Si + (1-x)*P_Ge - x*(1-x)*P_bowing 
+            P_bowing is the quadratic bowing parameter for the parameter P.
+        Returns
+        -------
+        Parameters for alloy.
+
+        """        
+        bin_1_params_db = self.bin_params_dbs.get(self.bins_[0])
+        bin_2_params_db = self.bin_params_dbs.get(self.bins_[1])
+        alloy_params_db = self.bin_params_dbs.get(self.alloy_name)
+        self.alloy_params_ = {}
+        for key, bowing in alloy_params_db.items():
+            if key == 'comment': continue
+            self.alloy_params_[key] = x * bin_1_params_db.get(key) +\
+                                        (1.0 - x) * bin_2_params_db.get(key)\
+                                            - bowing * x *(1.0 - x)  
+        return 
+            
+    def _get_alloy_params(self, composition:float|np.ndarray):
+        """
+        This function calculates material parameters for alloy from its
+        binary component parameters using interpolation.
+
+        Parameters
+        ----------
         
-    #--------------------------------------------------------------------------
+
+        Returns
+        -------
+        Parameters for alloy.
+
+        """
+        if len(self.bins_) == 2:
+            self._get_two_comp_component_alloy_params(composition)
+        else:
+            raise ValueError('Requested multiple composition component alloys are not implemented yet. Contact developer.')
+
+    ## ---------------- Functions for strain calculations ---------------------
+    ### ********************* Biaxials strain *********************************
     @staticmethod        
     def _get_substrate_properties(substrate_name):
         """
@@ -193,6 +237,7 @@ class _AlloyParams:
         # Crstal coordinate system
         e_css = -eps_plane/(h2+k2+l2)*np.array([nu*h2-(k2+l2), nu*k2-(h2+l2), nu*l2-(h2+k2), 
                                                 k*l*nup1, h*l*nup1, h*k*nup1])
+        # return strain_tensor = [e_xx, e_yy, e_zz, e_yz, e_xz, e_xy]
         return e_css.T
 
     def _biaxial_Poisson_ratio(self, h2, k2, l2):
@@ -203,47 +248,8 @@ class _AlloyParams:
             h4k4l4 = h2*h2+k2*k2+l2*l2
             h2k2l2 = h2*k2+h2*l2+k2*l2
             return 2.0*((c12 * h4k4l4 + (c11 + c12 - 2.0*c44) * h2k2l2)/
-                        (c11 * h4k4l4 + 2.0 * (c12 + 2.0*c44) * h2k2l2))
-
-    #--------------------------------------------------------------------------
-    def _get_two_comp_component_alloy_params(self, x):
-        """
-        This function calculates the parameters for a 2-composition component alloy 
-        from itsbinary component parameters using quadratic interpolation.
-        E.g. for any parameter, P:
-            P_SixGe1-x = x*P_Si + (1-x)*P_Ge - x*(1-x)*P_bowing 
-            P_bowing is the quadratic bowing parameter for the parameter P.
-        Returns
-        -------
-        Parameters for alloy.
-
-        """        
-        bin_1_params_db = self.bin_params_dbs.get(self.bins_[0])
-        bin_2_params_db = self.bin_params_dbs.get(self.bins_[1])
-        alloy_params_db = self.bin_params_dbs.get(self.alloy_name)
-        self.alloy_params_ = {}
-        for key, bowing in alloy_params_db.items():
-            self.alloy_params_[key] = x * bin_1_params_db.get(key) +\
-                                        (1.0 - x) * bin_2_params_db.get(key)\
-                                            - bowing * x *(1.0 - x)  
-        return 
-            
-    def _get_alloy_params(self, composition:float|np.ndarray):
-        """
-        This function calculates material parameters for alloy from its
-        binary component parameters using interpolation.
-
-        Parameters
-        ----------
-        
-
-        Returns
-        -------
-        Parameters for alloy.
-
-        """
-        if len(self.bins_) == 2:
-            self._get_two_comp_component_alloy_params(composition)
-        else:
-            raise ValueError('Requested multiple composition component alloys are not implemented yet. Contact developer.')
-            
+                        (c11 * h4k4l4 + 2.0 * (c12 + 2.0*c44) * h2k2l2))    
+    ### ***********************************************************************
+    ## ------------------------------------------------------------------------
+# =============================================================================
+    

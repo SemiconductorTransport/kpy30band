@@ -26,7 +26,7 @@ class _initiallize_kp_params(_AlloyParams):
                               alloy_type=alloy_type, use_this_params=use_this_params)
         
         if pseudomorphic_strain: 
-            self.apply_strain_ = True
+            self.apply_pseudomorphic_strain_ = True
             self.biaxial_substrate = substrate
             self.growth_hkl = np.array(growth_direction, dtype=float)
             
