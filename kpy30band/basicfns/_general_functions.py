@@ -39,7 +39,7 @@ class _SaveData2File:
     @classmethod
     def _save_data_2_file(cls, data=None, save_dir='.', file_name:str='', 
                           print_log:bool=False, print_msg:str='Saving to file...'):
-        header_txt = '! kx(2pi/a)  ky(2pi/a)  kz(2pi/a) E(eV)'          
+        header_txt = '! kx(nm^-1)  ky(nm^-1)  kz(nm^-1) E(eV)'          
             
         if print_log > '1': print(f"{'='*cls._draw_line_length}\n- {print_msg}.")
         
@@ -83,20 +83,25 @@ class _SaveData2File:
             shift = 0
             special_kpts_pos, special_kpts_label, kpts, bands_e = [], [], [], []
             for k_paths, r_data in read_data[compos].items(): # loop over k-path
+                k_components = k_paths.split('-')
                 k_ps = r_data[:, 0:3] # First 3 numbers are k-points
                 XX = np.sqrt(np.sum(k_ps*k_ps, axis=1))
                 #-----------------------------------------------------
                 # This is to move x-axis coordinates to make the plot 
-                XX_fi = XX[-1] - XX[0]
-                XX = XX + shift if XX_fi > 0 else XX[0]-XX+shift
-                shift = XX[-1]
+                if len(k_components) > 1:
+                    XX_fi = XX[-1] - XX[0]
+                    XX = XX + shift if XX_fi > 0 else XX[0]-XX+shift
+                    shift = XX[-1]
+                    special_kpts_pos += [XX[0], XX[-1]]
+                else:
+                    special_kpts_pos += [XX[0]]
                 #-----------------------------------------------------
                 kpts.append(XX)
-                bands_e.append(r_data[:, 3:].T) # 3 is for kx, ky, kz in the begining
-                special_kpts_pos += [XX[0], XX[-1]]
-                special_kpts_label += k_paths.split('-')   
+                bands_e.append(r_data[:, 3:].T) # 3 is for kx, ky, kz at the begining
+                special_kpts_label += k_components   
             kpts = np.concatenate(kpts, axis=0)
             bands_e = np.concatenate(bands_e, axis=1)
-            for_compos[compos] = (kpts, bands_e, (special_kpts_pos, special_kpts_label))
+            for_compos[compos] = {'shifted_k(nm^-1)':kpts, 'E(ev)': bands_e, 
+                                  'special_kpts': (special_kpts_pos, special_kpts_label)}
         return for_compos
     

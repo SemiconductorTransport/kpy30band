@@ -4,7 +4,7 @@
 
 #==============================================================================
 # NOTE: In nextnano all matrix elements are in a.u.. Here all matrix elements are
-# in eV.nm unit. [conversion: X a.u = X*1.44/2 eV.nm]
+# in eV.nm unit. [conversion: X a.u = X*hbar^2/(m0*a0) = X*1.44/2 eV.nm]
 # Mapping with nextnano:
 #   E_1q=EG_1q,E_5d=EG_5d,E_3t= EG_3,E_1u=EG_1u
 #   EG_5c=EG_5c,E_1c=EG_1,E_1w=EG_1v,E_5v=EG_5
@@ -41,11 +41,11 @@ material_database = {
                     'EG_3': 0, 'EG_5c': 0, 
                     # E_Delta (eV)
                     'ED_d': 0, 'ED_c': 0, 'ED_so': 0, 
-                    'ED_dso': 0, 'ED_prime': 0,
+                    'ED_dso': 0, 'ED_prime': 0, 'ED_cd_prime': 0,
                     # Matrix element (eV.nm)
                     'P_P': 0, 'P_Pd': 0, 'P_P2': 0, 'P_P2d': 0, 
                     'P_Px': 0, 'P_Pxd': 0, 'P_P3': 0, 'P_P3d': 0, 
-                    'P_Pu': 0, 'P_Ps': 0, 'P_Pprime': 0, 'P_P2prime': 0,
+                    'P_Pu': 0, 'P_Ps': 0, 'P_P_prime': 0, 'P_P2_prime': 0,
                     # Strain parameters
                     'S_l_EG_5': 0, 'S_m_EG_5': 0, 'S_n_EG_5': 0,
                     'S_l_EG_5c': 0, 'S_m_EG_5c': 0, 'S_n_EG_5c': 0,
@@ -72,11 +72,11 @@ material_database = {
            'EG_3': 8.54, 'EG_5c': 3.335, 
            # E_Delta (eV)
            'ED_d': 0.012, 'ED_c': 0.033, 'ED_so': 0.044, 
-           'ED_dso': 0.022, 'ED_prime': 0.0,
+           'ED_dso': 0.022, 'ED_prime': 0.0, 'ED_cd_prime': 0.0000,
            # Matrix element (eV.nm)
-           'P_P': 0.8784, 'P_Pd': -0.00576, 'P_P2': 0.11232, 'P_P2d': 1.026, 
-           'P_Px': 0.7689, 'P_Pxd': -0.472, 'P_P3': 0.3907, 'P_P3d': 0.6006, 
-           'P_Pu': 0.8395, 'P_Ps': 0.2088, 'P_Pprime': 0.00, 'P_P2prime': 0.00,
+           'P_P': 0.8784, 'P_Pd': -0.0058, 'P_P2': 0.1123, 'P_P2d': 1.0260, 
+           'P_Px': 0.7689, 'P_Pxd': -0.4720, 'P_P3': 0.3907, 'P_P3d': 0.6006, 
+           'P_Pu': 0.8395, 'P_Ps': 0.2088, 'P_P_prime': 0.00, 'P_P2_prime': 0.00,
            # Strain parameters
            'S_l_EG_5': -2.7, 'S_m_EG_5': 4.2, 'S_n_EG_5': -7.379,
            'S_l_EG_5c': 3.4, 'S_m_EG_5c': -0.5, 'S_n_EG_5c': -10.392,
@@ -91,24 +91,24 @@ material_database = {
            'S_g_EG_31q': -10.5,'S_g_EG_31': -4.5,
            'S_h_EG_5c3': 0,
            # Elastic constants: C_ij parameters (GPa)
-           'C_11': 167.5, 'C_12': 65, 'C_44': 80.1	
+           'C_11': 168.3, 'C_12': 66.8, 'C_44': 79.9	
            },
     # 'Ge2' is same as 'Ge'. Because we have two sets of parameters for Ge.
     'Ge2': { 
            'comment': 'Taken from Rideau et al., Phys. Rev. B 74, 195208 (2006)',
            # Lattice parameters
-           'lattice_a0': 5.658 , 
+           'lattice_a0': 5.583 , 
            # E_Gamma (eV)
            'EG_1u': 6.8, 'EG_1q': 14.0, 'EG_5d': 11.36, 
            'EG_1v': -12.88, 'EG_1': 0.89, 'EG_5': 0.00, 
            'EG_3': 10.3, 'EG_5c': 3.113, 
            # E_Delta (eV)
            'ED_d': 0.042, 'ED_c': 0.19, 'ED_so': 0.296, 
-           'ED_dso': 0.22, 'ED_prime': 0.0,
+           'ED_dso': 0.22, 'ED_prime': 0.0, 'ED_cd_prime': 0.0000,
            # Matrix element (eV.nm)
-           'P_P': 0.85392, 'P_Pd': 0.0144, 'P_P2': 0.1065, 'P_P2d': 1.0071, 
+           'P_P': 0.8539, 'P_Pd': 0.0144, 'P_P2': 0.1065, 'P_P2d': 1.0071, 
            'P_Px': 0.7738, 'P_Pxd': -0.5477, 'P_P3': 0.4544, 'P_P3d': 0.5915, 
-           'P_Pu': 0.7929, 'P_Ps': 0.2664 , 'P_Pprime': 0.00, 'P_P2prime': 0.00,
+           'P_Pu': 0.7929, 'P_Ps': 0.2664 , 'P_P_prime': 0.00, 'P_P2_prime': 0.00,
            # Strain parameters (Taken from Ref-3)
            'S_l_EG_5': -3.8, 'S_m_EG_5': 4.9, 'S_n_EG_5': -9.527,
            'S_l_EG_5c': 6.026, 'S_m_EG_5c': 0.762, 'S_n_EG_5c': -10.134,
@@ -135,11 +135,11 @@ material_database = {
            'EG_3': 8.5786, 'EG_5c': 2.9900, 
            # E_Delta (eV)
            'ED_d': 0.0793, 'ED_c': 0.2520, 'ED_so': 0.2247, 
-           'ED_dso': 0.22, 'ED_prime': 0.0,
+           'ED_dso': 0.22, 'ED_prime': 0.0, 'ED_cd_prime': 0.0000,
            # Matrix element (eV.nm)
            'P_P': 0.8421, 'P_Pd': 0.1781, 'P_P2': -0.0734, 'P_P2d': 1.0543, 
            'P_Px': 0.8114, 'P_Pxd': -0.5334, 'P_P3': 0.3757, 'P_P3d': 0.6820, 
-           'P_Pu': 0.7994, 'P_Ps': -0.0384, 'P_Pprime': 0.00, 'P_P2prime': 0.00,
+           'P_Pu': 0.7994, 'P_Ps': -0.0384, 'P_P_prime': 0.00, 'P_P2_prime': 0.00,
            # Strain parameters (Taken from Ref-3)
            'S_l_EG_5': -3.8, 'S_m_EG_5': 4.9, 'S_n_EG_5': -9.527,
            'S_l_EG_5c': 6.026, 'S_m_EG_5c': 0.762, 'S_n_EG_5c': -10.134,
@@ -154,23 +154,23 @@ material_database = {
            'S_g_EG_31q': -5.000,'S_g_EG_31': -5.354,
            'S_h_EG_5c3': 0,
            # Elastic constants: C_ij parameters (GPa)
-           'C_11': 131.5, 'C_12': 49.4, 'C_44': 68.4
+           'C_11': 124.0, 'C_12': 41.3, 'C_44': 68.3
 	},
     'Sn': { 
            'comment': 'Taken from Song et. al. New J. Phys. 21, 073037 (2019)',
            # Lattice parameters
-           'lattice_a0': 6.489, 
+           'lattice_a0': 6.4892, 
            # E_Gamma (eV)
            'EG_1u': 5.473, 'EG_1q': 11.52, 'EG_5d': 8.546, 
            'EG_1v': -10.827, 'EG_1': -0.376, 'EG_5':0.00, 
            'EG_3': 7.593, 'EG_5c': 2.194, 
            # E_Delta (eV)
            'ED_d': 0.046, 'ED_c': 0.445, 'ED_so': 0.652, 
-           'ED_dso': 0.556, 'ED_prime': 0.0,
+           'ED_dso': 0.556, 'ED_prime': 0.0, 'ED_cd_prime': 0.0000,
            # Matrix element (eV.nm)
            'P_P': 0.8425, 'P_Pd': -0.0845, 'P_P2': 0.0014, 'P_P2d': 0.8497, 
            'P_Px':  0.6727, 'P_Pxd': 0.4438, 'P_P3': 0.4186, 'P_P3d': -0.4923, 
-           'P_Pu': 0.6988, 'P_Ps': 0.3291, 'P_Pprime': 0.00, 'P_P2prime': 0.00,
+           'P_Pu': 0.6988, 'P_Ps': 0.3291, 'P_P_prime': 0.00, 'P_P2_prime': 0.00,
            # Strain parameters (Taken from Ref-3)
            'S_l_EG_5': 3.476, 'S_m_EG_5': -0.047, 'S_n_EG_5': 3.157,
            'S_l_EG_5c': 40.493, 'S_m_EG_5c': -39.341, 'S_n_EG_5c': -1.437,
@@ -185,25 +185,25 @@ material_database = {
            'S_g_EG_31q': -1.721,'S_g_EG_31': -9.579,
            'S_h_EG_5c3': 0,
            # Elastic constants: C_ij parameters (GPa)
-           'C_11': 69.0, 'C_12': 34.0, 'C_44': 30.0
+           'C_11': 69.0, 'C_12': 29.3, 'C_44': 36.2
 	},
     #==========================================================================
     # Alloys
     'SiGe2': { 
            'comment': 'Taken from Rideau et al., Phys. Rev. B 74, 195208 (2006)',
            # Lattice parameters
-           'lattice_a0': 0, 
+           'lattice_a0': 0.0532, 
            # E_Gamma (eV)
            'EG_1u': 0.0000, 'EG_1q': 0.0000, 'EG_5d': 0.0000, 
            'EG_1v': 0.0000, 'EG_1': 0.0000, 'EG_5': 0.0000, 
            'EG_3': 0.0000, 'EG_5c': 0.0000, 
            # E_Delta (eV)
            'ED_d': 0.0000, 'ED_c': 0.0000, 'ED_so': 0.052, 
-           'ED_dso': 0.0000, 'ED_prime': 0.04,
+           'ED_dso': 0.0000, 'ED_prime': -0.04, 'ED_cd_prime': 0.0000,
            # Matrix element (eV.nm)
-           'P_P': 0.0000, 'P_Pd': -0.036, 'P_P2': 0.0000, 'P_P2d': 0.0000, 
+           'P_P': 0.0000, 'P_Pd': -0.0360, 'P_P2': 0.0000, 'P_P2d': 0.0000, 
            'P_Px': 0.0000, 'P_Pxd': 0.0000, 'P_P3': 0.0000, 'P_P3d': 0.0000, 
-           'P_Pu': -0.0288, 'P_Ps': 0.0000, 'P_Pprime': -0.1j, 'P_P2prime': 0.3j,
+           'P_Pu': -0.0288, 'P_Ps': 0.0000, 'P_P_prime': -0.1j, 'P_P2_prime': 0.3j,
            # Strain parameters (Taken from Ref-3)
            'S_l_EG_5': 0.0000, 'S_m_EG_5': 0.0000, 'S_n_EG_5': 0.0000,
            'S_l_EG_5c': 0.0000, 'S_m_EG_5c': 0.0000, 'S_n_EG_5c': 0.0000,
@@ -229,11 +229,11 @@ material_database = {
            'EG_3': 0.0000, 'EG_5c': 0.0000, 
            # E_Delta (eV)
            'ED_d': 0.0000, 'ED_c': 0.0000, 'ED_so': -4.9535, 
-           'ED_dso': 0.0000, 'ED_prime': 0.0000,
+           'ED_dso': 0.0000, 'ED_prime': 0.0000, 'ED_cd_prime': 0.0000,
            # Matrix element (eV.nm)
            'P_P': -0.3346, 'P_Pd': 1.9328, 'P_P2': -1.2452, 'P_P2d': -0.4220, 
            'P_Px': -0.0055, 'P_Pxd': 2.4647, 'P_P3': 0.0089, 'P_P3d': 0.0000, 
-           'P_Pu': -0.0441, 'P_Ps': 0.0000, 'P_Pprime': 0.0000, 'P_P2prime': 0.0000,
+           'P_Pu': -0.0441, 'P_Ps': 0.0000, 'P_P_prime': 0.0000, 'P_P2_prime': 0.0000,
            # Strain parameters (Taken from Ref-3)
            'S_l_EG_5': 0.0000, 'S_m_EG_5': 0.0000, 'S_n_EG_5': 0.0000,
            'S_l_EG_5c': 0.0000, 'S_m_EG_5c': 0.0000, 'S_n_EG_5c': 0.0000,

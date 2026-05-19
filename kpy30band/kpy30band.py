@@ -64,7 +64,7 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
         self.save_dir_ = save_file_dir
         self.log_output = str(log_info)
         
-        _initiallize_kp_params.__init__(self)
+        _initiallize_kp_params.__init__(self, print_log=self.log_output)
         self._initalize_mater_parameters(binaries=binaries,
                         pseudomorphic_strain=pseudomorphic_strain, 
                         substrate=substrate, growth_direction=growth_direction_hkl, 
@@ -74,7 +74,7 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
     def kp_30x30(self, compositions:float|np.ndarray|list=None,
                  overwrite_strain:float|list|np.ndarray=None,
                  kpoints_list:str|list='L-G', nkpoints:int=41, 
-                 cal_band_indices=[0,10], cal_band_E_btw_values=None, # These allow performance improvement
+                 cal_band_indices=None, cal_band_E_btw_values=None, # These allow performance improvement
                  return_energy_only:bool=True,
                  save_data:bool=False, save_file:str='eigenval.h5'):
         
@@ -100,7 +100,8 @@ class k_dot_p(_initiallize_kp_params, _kp_H_30x30_ZB):
             kp = _kp_H_30x30_ZB(kpoints_list = kpoints_list, nkpoints = nkpoints, 
                                 return_eigen_val_only = return_energy_only,
                                 cal_band_indices_ = cal_band_indices, 
-                                cal_band_E_btw_values_ = cal_band_E_btw_values)
+                                cal_band_E_btw_values_ = cal_band_E_btw_values,
+                                print_log=self.log_output)
         else:
             raise ValueError(f'Hamiltonian for {self.alloy_crys_type_} is not implemented yet. Contact developer.')
         # Calculating the eigenvalues and eigenvectors of the kp Hamiltonian
@@ -169,15 +170,18 @@ class plottings(_plot_bandstr):
     def plot(self, kpts, bands_energy, special_kpts=None, fig=None, ax=None, 
              save_file_name=None, ymin=None, ymax=None, annotate_text={'text':None,'pos':(0,0)},
              title_text:str=None, xaxis_label:str=None, yaxis_label:str=r'E (eV)', 
-             ls_spkpt='--', lc_spkpt='gray', color='k', line_style='-', color_map='viridis', 
-             show_legend:bool=False, show_colorbar:bool=False, colorbar_label:str=None, 
-             savefig:bool=False, vmin=None, vmax=None, show_plot:bool=True, **kwargs_savefig):
+             y_axis_major_tick:float=None, ls_spkpt='--', lc_spkpt='gray', line_marker='', line_style='-', 
+             color='k', color_map='viridis', show_legend:bool=False, show_colorbar:bool=False, 
+             colorbar_label:str=None, savefig:bool=False, vmin=None, vmax=None, 
+             show_plot:bool=True, **kwargs_savefig):
         return self._plot(kpts, bands_energy, special_kpts=special_kpts, fig=fig, ax=ax, 
-                                  save_file_name=save_file_name, ymin=ymin, ymax=ymax, 
-                                  annotate_text=annotate_text, title_text=title_text, 
-                                  xaxis_label=xaxis_label, yaxis_label=yaxis_label, 
-                                  ls_spkpt=ls_spkpt, lc_spkpt=lc_spkpt, color=color, line_style=line_style, 
-                                  color_map=color_map, show_legend=show_legend, show_colorbar=show_colorbar, 
-                                  colorbar_label=colorbar_label, savefig=savefig, vmin=vmin, vmax=vmax, 
-                                  show_plot=show_plot, **kwargs_savefig)
+                          save_file_name=save_file_name, ymin=ymin, ymax=ymax, 
+                          annotate_text=annotate_text, y_axis_major_tick=
+                          y_axis_major_tick, title_text=title_text, 
+                          xaxis_label=xaxis_label, yaxis_label=yaxis_label, 
+                          ls_spkpt=ls_spkpt, lc_spkpt=lc_spkpt, 
+                          line_marker=line_marker, line_style=line_style, color=color,  
+                          color_map=color_map, show_legend=show_legend, show_colorbar=show_colorbar, 
+                          colorbar_label=colorbar_label, savefig=savefig, vmin=vmin, vmax=vmax, 
+                          show_plot=show_plot, **kwargs_savefig)
 #==============================================================================

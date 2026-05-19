@@ -3,9 +3,9 @@
 <!-- =========================================================== -->
 
 <!-- =========================================================== -->
-![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/Ge_LGX.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/GeSn_LGX.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/Sn_LGX.png)
+![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/Ge_LGX.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/GeSn_LGX.png) | ![](https://raw.githubusercontent.com/SemiconductorTransport/kpy30band/refs/heads/main/imgs/StrainedGe_LGX.png)
 :------------------------------:| :------------------------------:| :------------------------------:
-Ge k.p bandstructure | GeSn k.p bandstructure | Sn k.p bandstructure
+Bulk Ge | Bulk GeSn | Strained Ge
 
 <!-- =========================================================== -->
 

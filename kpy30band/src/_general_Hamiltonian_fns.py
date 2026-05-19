@@ -23,20 +23,23 @@ class _initiallize_kp_params(_AlloyParams):
 
         _AlloyParams.__init__(self, binaries=binaries, 
                               alloy_crystal_structure=alloy_crystal_structure,
-                              alloy_type=alloy_type, use_this_params=use_this_params)
+                              alloy_type=alloy_type, use_this_params=use_this_params,
+                              log_info=self.print_info)
         
         if pseudomorphic_strain: 
             self.apply_pseudomorphic_strain_ = True
             self.biaxial_substrate = substrate
             self.growth_hkl = np.array(growth_direction, dtype=float)
-            
         
 #%% ===========================================================================
 class _kpoints_from_point_path:
     def __init__(self, crys_type_):
         if crys_type_ in ['zb', 'dm', 'cube']:
-            self.kpath_map = {'G':[0.0,0.0,0.0], 'L':[0.5,0.5,0.5], 'X':[0.0,0.0,1.0], 
-                              'K':[0.75,0.75,0.0], 'W':[0.5,0.0,1.0], 'U':[0.25,0.25,1.0]}
+            # In the unit of 2pi/a and 2pi/c
+            self.kpath_map = {'G':[0.0,0.0,0.0], 'L':[0.5,0.5,0.5], 'X':[1.0,0.0,0.0], 
+                              'K':[0.75,0.75,0.0], 'W':[0.5,0.0,1.0], 'U':[0.25,0.25,1.0],
+                              'Z_romb':[0.5,0.5,0.5], 'F_romb':[0.0, 0.0, 1.0], 'L_romb':[-0.5,0.5,0.5],
+                              'N_tet':[0.0, 0.5, 0.5], 'Z_tet':[0.0,0.0,0.5], 'X_tet':[0.5,0.0,0.0]}
         else:
             raise ValueError(f'Special k-points for {crys_type_} is not available yet. Contact developer.')
 
@@ -84,3 +87,23 @@ class _kpoints_from_point_path:
     def _check_special_kp_name_in_defined(self, kname):
         if kname not in self.kpath_map.keys():
             raise ValueError(f'{kname} special k-point is not defined in database yet. contact developer.')
+            
+class Hamiltonian_properties:
+    def __init__(self):
+        pass
+    
+    @staticmethod
+    def check_matrix_Hermitian(H, rtol=1e-05, atol=1e-08):
+        return np.allclose(H, np.conjugate(H).T, rtol=rtol, atol=atol)
+    
+    @classmethod
+    def check_H_Hermitian(cls, H, rtol=1e-05, atol=1e-08):
+        print_msg = 'Final k.p Hamiltonian is not Hermitian.'
+        assert cls.check_matrix_Hermitian(H,rtol=rtol,atol=atol), print_msg
+        
+    @staticmethod
+    def _print_Hamiltonian_matrix(H):
+        for jj in H:
+            ll = [f'{k:.4f}' for k in jj]
+            print(', '.join(ll))
+            

@@ -30,9 +30,11 @@ class _plot_bandstr(_GeneratePlots):
         
     def _plot(self, kpts, bands_energy, special_kpts=None, fig=None,  
               ax=None, save_file_name=None, ymin=None, ymax=None, 
-              annotate_text={'text':None, 'pos':(0,0)}, title_text:str=None,  
-              xaxis_label:str=None, yaxis_label:str=r'E (eV)', ls_spkpt='--', lc_spkpt='gray',
-              color='gray', line_style='-', color_map='viridis', show_legend:bool=False, 
+              annotate_text={'text':None, 'pos':(0,0)}, 
+              y_axis_major_tick:float=None, title_text:str=None,  
+              xaxis_label:str=None, yaxis_label:str=r'E (eV)', ls_spkpt='--', 
+              lc_spkpt='gray', line_marker='o', line_style='-', 
+              color='gray', color_map='viridis', show_legend:bool=False, 
               show_colorbar:bool=False, colorbar_label:str=None, savefig:bool=False,
               vmin=None, vmax=None, show_plot:bool=True, **kwargs_savefig):
         if ax is None: 
@@ -57,10 +59,8 @@ class _plot_bandstr(_GeneratePlots):
         
         #ax, return_plot = self._plot_2d_plane(results, ax, color=color, ls=ls_2d)
         if self.plot_mode == 'band_structure':
-            self._plot_bandstructure(kpts, bands_energy, special_xticks=special_kpts, 
-                                     color=color, ls=line_style, ls_spkpt=ls_spkpt, 
-                                     lc_spkpt=lc_spkpt)
-            return_plot = None
+            return_plot = self._plot_bandstructure(kpts, bands_energy, color=color, 
+                                                   ls=line_style,marker=line_marker)
         else:
             raise ValueError(f'Requested plot mode {self.plot_mode} has not been implemented yet. Contact developer.')
             
@@ -76,7 +76,7 @@ class _plot_bandstr(_GeneratePlots):
             self.ax.set_xticks(xticks_pos, labels=list(xticks_.values()))
             for xx in xticks_pos:
                 self.ax.axvline(x=xx, color=lc_spkpt, ls=ls_spkpt)
-
+        if y_axis_major_tick: self.ax.yaxis.set_major_locator(ticker.MultipleLocator(y_axis_major_tick))
         if save_file_name is None:
             if show_plot: plt.show()
         else:
@@ -87,30 +87,24 @@ class _plot_bandstr(_GeneratePlots):
     
     @classmethod
     def _map_special_kpoints_labels(cls, special_kpts_pos, special_kpts_label):
+        _name_map = {'G': r'$\Gamma$', 'D': r'$\Delta$', 'Z_romb': 'Z', 
+                     'F_romb': 'F', 'L_romb': 'L', 'Z_tet': 'Z', 'X_tet': 'X',
+                     'N_tet':'N'}
         xticks_ = {}
         for ii, pos_ in enumerate(special_kpts_pos):
             key = f'{pos_:0.3f}'
-            ll = cls._rename_xticks(special_kpts_label[ii] )
+            ll = _name_map.get(special_kpts_label[ii])
+            if ll is None: ll = special_kpts_label[ii]
             if key in xticks_:
                 if xticks_[key] == ll: continue
                 xticks_[key] += f',{ll}'
             else:
                 xticks_[key] = ll
         return xticks_
-    
-    @classmethod
-    def _rename_xticks(cls, xticks_label):
-        if xticks_label.startswith('G'):
-            return r'$\Gamma$'
-        elif xticks_label.startswith('D'):
-            return r'$\Delta$'
-        else:
-             return xticks_label
         
-    def _plot_bandstructure(self, kpts, bands_e, special_xticks=None, color=None, ls='-',
-                            ls_spkpt='--', lc_spkpt='gray'):
+    def _plot_bandstructure(self, kpts, bands_e, color=None, ls='-', marker='o'):
         for be in bands_e:
-            self.ax.plot(kpts, be, ls=ls, color=color)
+            self.ax.plot(kpts, be, ls=ls, color=color, marker=marker)
         return
         
     

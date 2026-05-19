@@ -5,7 +5,7 @@ Created on Mon Mar 23 12:05:16 2026
 
 @author: badal.mondal
 """
-from ._general_Hamiltonian_fns import _kpoints_from_point_path
+from ._general_Hamiltonian_fns import _kpoints_from_point_path, Hamiltonian_properties
 import numpy as np
 from scipy.linalg import eigh
 
@@ -15,7 +15,8 @@ class _kp_H_30x30(_kpoints_from_point_path):
     # This class is specific to ZB Hamiltonian
     def __init__(self, kpoints_list:str|list='L-G', nkpoints:int=41,
                  return_eigen_val_only:bool=True, cal_band_indices_=[0,10], 
-                 cal_band_E_btw_values_=None):
+                 cal_band_E_btw_values_=None,print_log=None):
+        self.print_info = print_log
         self.return_eigen_val_only = return_eigen_val_only
         self.cal_E_btw_indices = cal_band_indices_
         self.cal_E_btw_values = cal_band_E_btw_values_
@@ -33,6 +34,8 @@ class _kp_H_30x30(_kpoints_from_point_path):
         # (h^2.k^2/(2*m0), 2*pi/a*k_points)
         #h2k2_by_2m = h2_by_2m*np.sum(kpts_arr*kpts_arr, axis=1)/(a0*a0) # eV
         #k_points = 62.83185307179586/a0*kpts_arr # nm^-1
+        
+        # Return: hbar^2(2pi)^2k^2/2m0a^2, 2pi/a*k
         return (150.41206484194905*np.sum(kpts_arr*kpts_arr, axis=1)/(self.a0*self.a0), 
                 62.83185307179586/self.a0*kpts_arr)
 
@@ -52,13 +55,16 @@ class _kp_H_30x30(_kpoints_from_point_path):
             # kx, ky, kz, e1, e2, e3, ...
             eigenvalvecs_k_path[k_p_sec_name] = np.concatenate((k_p_sec,eigenvalvecs), axis=1)
         return eigenvalvecs_k_path
-    
+
     def _diagon_H_30x30(self):
-        return eigh(self._construct_H_30x30(), 
-                    lower=False, overwrite_a=True,
+        Total_H = self._construct_H_30x30()
+        # if self.print_info > '3': 
+        #     Hamiltonian_properties._print_Hamiltonian_matrix(Total_H)
+        # Hamiltonian_properties.check_H_Hermitian(Total_H)
+        return eigh(Total_H, lower=False, overwrite_a=True,
                     eigvals_only=self.return_eigen_val_only,  
                     subset_by_index=self.cal_E_btw_indices, 
-                    subset_by_value=self.cal_E_btw_values)  
+                    subset_by_value=self.cal_E_btw_values) 
                 
     def _construct_H_30x30(self):
         if self.strain_tensor is not None:
@@ -89,15 +95,16 @@ class _kp_H_30x30(_kpoints_from_point_path):
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Off-diagonal block
         H_off_diag[0:2, 2:8]     = self._Hk_2x6(mul_fact=self.kp_params['P_P2d']) # H_2x6_p4
-        H_off_diag[0:2, 16:22]   = self._Hk_2x6(mul_fact=self.kp_params['P_P2prime']) # H_2x6_s2
+        H_off_diag[0:2, 16:22]   = self._Hk_2x6(mul_fact=self.kp_params['P_P2_prime']) # H_2x6_s2
         H_off_diag[0:2, 24:30]   = self._Hk_2x6(mul_fact=self.kp_params['P_P2']) # H_2x6_p3
         H_off_diag[2:8, 8:12]    = self._Hk_4x6(mul_fact=self.kp_params['P_P3d']).T # H_6x4_r2
-        H_off_diag[2:8, 16:22]   = self._Hk_6x6(mul_fact=self.kp_params['P_Pxd']) # H_6x6_q2
+        H_off_diag[2:8, 16:22]   = self._Hk_6x6(mul_fact=self.kp_params['P_Pxd']) + \
+                                            self._H_G_SO(self.kp_params['ED_cd_prime']) # H_6x6_q2
         H_off_diag[2:8, 22:24]   = self._Hk_2x6(mul_fact=self.kp_params['P_Pd']).T # H_6x2_p2
         H_off_diag[8:12, 24:30]  = self._Hk_4x6(mul_fact=self.kp_params['P_P3']) # H_4x6_r1
         H_off_diag[12:14, 16:22] = self._Hk_2x6(mul_fact=self.kp_params['P_Pu']) # H_2x6_t1
         H_off_diag[14:16, 16:22] = self._Hk_2x6(mul_fact=self.kp_params['P_Ps']) # H_2x6_t2
-        H_off_diag[16:22, 22:24] = self._Hk_2x6(mul_fact=self.kp_params['P_Pprime']).T # H_6x2_s1
+        H_off_diag[16:22, 22:24] = self._Hk_2x6(mul_fact=self.kp_params['P_P_prime']).T # H_6x2_s1
         H_off_diag[16:22, 24:30] = self._Hk_6x6(mul_fact=self.kp_params['P_Px']) + \
                                             self._H_G_SO(self.kp_params['ED_prime']) # H_6x6_q1
         H_off_diag[22:24, 24:30] = self._Hk_2x6(mul_fact=self.kp_params['P_P']) # H_2x6_p1
@@ -152,9 +159,9 @@ class _kp_H_30x30(_kpoints_from_point_path):
                                        [ 1,  1j, 0,   0,   0, -1]])
     #**************************************************************************
     def _construct_strained_H_30x30(self):
-        W_off_diag = np.zeros((30,30), dtype=np.complex128)
-        W_diag = np.zeros((30,30), dtype=np.complex128)
-        
+        W_off_diag = np.zeros((30,30))
+        W_diag = np.zeros((30,30))
+
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Diagonal blocks
         W_diag[0:2, 0:2]     = self._W_diag_blocks_2x2(self.kp_params['S_a_EG_1q']) 
@@ -200,25 +207,23 @@ class _kp_H_30x30(_kpoints_from_point_path):
         W_off_diag[2:8, 16:22]   = self.kp_params['P_Pxd'] * W_6x6
         W_off_diag[2:8, 22:24]   = self.kp_params['P_Pd'] * W_2x6.T 
         W_off_diag[8:12, 24:30]  = self.kp_params['P_P3'] * W_4x6
-        W_off_diag[12:14, 16:22] = self.kp_params['P_Pu']  * W_2x6
-        W_off_diag[14:16, 16:22] = self.kp_params['P_Ps']  * W_2x6
+        W_off_diag[12:14, 16:22] = self.kp_params['P_Pu'] * W_2x6
+        W_off_diag[14:16, 16:22] = self.kp_params['P_Ps'] * W_2x6
         W_off_diag[16:22, 24:30] = self.kp_params['P_Px'] * W_6x6 
         W_off_diag[22:24, 24:30] = self.kp_params['P_P'] * W_2x6 
         
         #print(W_diag + W_off_diag)
-        return W_diag + W_off_diag + np.conjugate(W_off_diag).T 
+        return W_diag + W_off_diag + W_off_diag.T  #np.conjugate(W_off_diag).T 
     
     def _W_diag_blocks_2x2(self, a_Gamma):
         # 2x2 diagonal Hamiltonian block
-        diag_mat = np.zeros((2, 2), dtype=np.complex128) 
         diag_element = a_Gamma * (self.strain_tensor[0]+ self.strain_tensor[1]+ self.strain_tensor[2])
-        np.fill_diagonal(diag_mat, diag_element)
-        return diag_mat
+        return np.diag([diag_element, diag_element])
     
     def _W_diag_blocks_6x6(self, l, m, n):
         # 6x6 diagonal Hamiltonian block
         # strain_tensor = [e_xx, e_yy, e_zz, e_yz, e_xz, e_xy]
-        diag_mat = np.zeros((6, 6), dtype=np.complex128) 
+        diag_mat = np.zeros((6, 6)) 
         W_diag_blocks_3x3 = np.array([[l*self.strain_tensor[0]+
                                       m*(self.strain_tensor[1]+self.strain_tensor[2]), 
                                       n*self.strain_tensor[5], n*self.strain_tensor[4]],
@@ -239,7 +244,7 @@ class _kp_H_30x30(_kpoints_from_point_path):
         A = 6.0*(b-d); B = 3.0*(a+b-2.0*c); C = 2.0*(2.0*a-4.0*c+b+d)
         D = 5.0*b-2.0*c-4.0*d+a; E = 1.7320508075688772*(2.0*c-2.0*d-a+b)
         
-        diag_mat = np.zeros((4, 4), dtype=np.complex128) 
+        diag_mat = np.zeros((4, 4)) 
         e_11 = A*self.strain_tensor[0] + B*(self.strain_tensor[1]+self.strain_tensor[2])
         e_22 = C*self.strain_tensor[0] + D*(self.strain_tensor[1]+self.strain_tensor[2])
         e_12 = E*(self.strain_tensor[1]-self.strain_tensor[2])
@@ -265,7 +270,7 @@ class _kp_H_30x30(_kpoints_from_point_path):
     
     def _W_off_diag_blocks_4x6(self, h_Gamma):
         # 4x6 off diagonal Hamiltonian block
-        diag_mat = np.zeros((4, 6), dtype=np.complex128) 
+        diag_mat = np.zeros((4, 6)) 
         sqrt3 = 1.7320508075688772
         W_2x3 = np.array([[0, sqrt3*self.strain_tensor[4], -1*sqrt3*self.strain_tensor[5]], 
                           [2.0*self.strain_tensor[3], -1*self.strain_tensor[4], -1*self.strain_tensor[5]]])
@@ -275,13 +280,13 @@ class _kp_H_30x30(_kpoints_from_point_path):
     
     def _Wk_off_diagonal(self): 
         sqrt3 = 1.7320508075688772
-        W_6x6 = np.zeros((6,6), dtype=np.complex128)
-        W_4x6 = np.zeros((4,6), dtype=np.complex128)
-        W_2x6 = np.zeros((2,6), dtype=np.complex128)
+        W_6x6 = np.zeros((6,6))
+        W_4x6 = np.zeros((4,6))
+        W_2x6 = np.zeros((2,6))
         
-        W_3x3 = np.zeros((3,3), dtype=np.complex128)
-        W_2x3 = np.zeros((2,3), dtype=np.complex128)
-        W_1x3 = np.zeros((1,3), dtype=np.complex128)
+        W_3x3 = np.zeros((3,3))
+        W_2x3 = np.zeros((2,3))
+        W_1x3 = np.zeros((1,3))
         # strain_tensor = [e_xx, e_yy, e_zz, e_yz, e_xz, e_xy]
         # mapping w.r.t position in the strain_tensor
         e_iz_id = [4, 3, 2] # e_xz, e_yz, e_zz
@@ -289,20 +294,14 @@ class _kp_H_30x30(_kpoints_from_point_path):
         e_ix_id = [0, 5, 4] # e_xx, e_xy=e_yx, e_xz=e_zx
         
         for i in range(3): # loop over x,y,z
-            W_3x3 += np.array([[0, self.strain_tensor[e_iz_id[i]]*self.k[i], 
-                                self.strain_tensor[e_iy_id[i]]*self.k[i]],
-                               [self.strain_tensor[e_iz_id[i]]*self.k[i], 0, 
-                                self.strain_tensor[e_ix_id[i]]*self.k[i]], 
-                               [self.strain_tensor[e_iy_id[i]]*self.k[i],  
-                                self.strain_tensor[e_ix_id[i]]*self.k[i], 0]])
-            W_2x3 += np.array([[0, sqrt3*self.strain_tensor[e_iy_id[i]]*self.k[i], 
-                                -sqrt3*self.strain_tensor[e_iz_id[i]]*self.k[i]],
-                               [2.0*self.strain_tensor[e_ix_id[i]]*self.k[i],  
-                                -1*self.strain_tensor[e_iy_id[i]]*self.k[i],
-                                -1*self.strain_tensor[e_iz_id[i]]*self.k[i]]])
-            W_1x3 += np.array([[self.strain_tensor[e_ix_id[i]]*self.k[i], 
-                                self.strain_tensor[e_iy_id[i]]*self.k[i],
-                                self.strain_tensor[e_iz_id[i]]*self.k[i]]])
+            W_3x3 += np.array([[0, self.strain_tensor[e_iz_id[i]], self.strain_tensor[e_iy_id[i]]],
+                               [self.strain_tensor[e_iz_id[i]], 0, self.strain_tensor[e_ix_id[i]]], 
+                               [self.strain_tensor[e_iy_id[i]], self.strain_tensor[e_ix_id[i]], 0]]) * self.k[i]
+            W_2x3 += np.array([[0, sqrt3*self.strain_tensor[e_iy_id[i]], -sqrt3*self.strain_tensor[e_iz_id[i]]],
+                               [2.0*self.strain_tensor[e_ix_id[i]], -1.0*self.strain_tensor[e_iy_id[i]],
+                                -1.0*self.strain_tensor[e_iz_id[i]]]]) * self.k[i]
+            W_1x3 += np.array([[self.strain_tensor[e_ix_id[i]], self.strain_tensor[e_iy_id[i]],
+                                self.strain_tensor[e_iz_id[i]]]]) * self.k[i]
             
         W_6x6[0:3, 0:3] = W_3x3
         W_6x6[3:6, 3:6] = W_3x3

@@ -14,7 +14,7 @@ class _AlloyParams:
                        'SnGe': 'GeSn', 'GeSn': 'GeSn',
                        'SiSn': 'SiSn', 'SnSi': 'SiSn',}
     def __init__(self, binaries=['Si', 'Ge'], alloy_crystal_structure:str='wz', 
-                 alloy_type:str=None, use_this_params:dict=None):
+                 alloy_type:str=None, use_this_params:dict=None, log_info:str='1'):
         """
         Initiation function of the class _AlloyParams.
 
@@ -53,6 +53,7 @@ class _AlloyParams:
         None.
 
         """
+        self.log_output = str(log_info)
         self.bins_ = list(binaries)
         self.alloy_type_ = alloy_type
         self.alloy_crys_type_ = alloy_crystal_structure.lower()
@@ -123,7 +124,7 @@ class _AlloyParams:
         alloy_name = ''.join(self.bins_)
         self.alloy_name = _AlloyParams._alloy_name_map.get(alloy_name)
         if self.alloy_name is None: 
-            raise ValueError('Requested alloyes are not implemented yet. Contact developer.')
+            raise ValueError(f'Requested {alloy_name} alloy is not implemented yet. Contact developer.')
             
         params_db = {self.alloy_name: material_database.get(self.alloy_name).copy()} # These are bowing parameters
         for mat_name in self.bins_:
@@ -215,15 +216,18 @@ class _AlloyParams:
                 tmp = np.array(overwrite_epsilon_in_plane_DCS)
                 if len(tmp) < len_axs:
                     raise ValueError('Overwrite_strain array length should be >= compositions array. Alternatively pass a single float.')
-                epsilon_in_plane_DCS = tmp[:len_axs]                
+                epsilon_in_plane_DCS = tmp[:len_axs]     
+            print_msg = '- Applying pseudomorphic strain as per overwrite_strain.'
         else:
             if isinstance(self.biaxial_substrate, str):
                 # substrate in-plane lattice parameter
                 substrate_lp = self._get_substrate_properties(self.biaxial_substrate).get('lattice_a0') 
             else:    
                 substrate_lp = float(self.biaxial_substrate)
+            print_msg = f'- Applying pseudomorphic strain w.r.t substrate lattice parameter = {substrate_lp:0.3f} A'
             # Device coordinate system  
             epsilon_in_plane_DCS = substrate_lp/a_xs - 1.0 
+        if self.log_output: print(f'{print_msg}')
         return epsilon_in_plane_DCS
             
     def _cal_pseudomorphic_strain(self, overwrite_epsilon_in_plane_DCS:float|list|np.ndarray=None):
@@ -237,8 +241,17 @@ class _AlloyParams:
         # Crstal coordinate system
         e_css = -eps_plane/(h2+k2+l2)*np.array([nu*h2-(k2+l2), nu*k2-(h2+l2), nu*l2-(h2+k2), 
                                                 k*l*nup1, h*l*nup1, h*k*nup1])
-        # return strain_tensor = [e_xx, e_yy, e_zz, e_yz, e_xz, e_xy]
-        return e_css.T
+        eps_tensor = e_css.T
+        # Print strain tensor
+        if self.log_output:
+            strain_tensor_component = ['e_xx', 'e_yy', 'e_zz', 'e_yz', 'e_xz', 'e_xy']
+            print_strain = '\t'
+            for j in range(len(eps_tensor)):
+                print_strain += '\n\t'
+                print_strain += ", ".join([f'{strain_tensor_component[i]}: {eps_tensor[j][i]:0.5f}' 
+                                           for i in range(6)])
+            print(f'- Strain tensor:::{print_strain}')
+        return eps_tensor
 
     def _biaxial_Poisson_ratio(self, h2, k2, l2):
         if self.alloy_crys_type_  in ['zb', 'dm', 'cube']:
